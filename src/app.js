@@ -17,7 +17,7 @@ app.use(hpp());
 app.use(mongoSanitize());
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://akod-delivery-note.vercel.app"],
+    origin: ["http://localhost:3000", "https://akod-erp.vercel.app"],
     credentials: true,
   })
 );
