@@ -1,0 +1,26 @@
+2026-04-12 03:16:10 error: 	Error caught: account is not defined
+2026-04-12 03:16:10 error: 	A non-operational error occurred
+2026-04-12 03:20:11 error: 	Error caught: Ledger validation failed: balance: Path `balance` is required.
+2026-04-12 03:20:32 error: 	Error caught: Ledger validation failed: balance: Path `balance` is required.
+2026-04-12 03:22:49 error: 	Error caught: companyName is not defined
+2026-04-12 03:22:49 error: 	A non-operational error occurred
+2026-04-12 03:24:34 error: 	Error caught: companyName is not defined
+2026-04-12 03:24:34 error: 	A non-operational error occurred
+2026-04-12 03:24:34 error: 	Error caught: companyName is not defined
+2026-04-12 03:24:34 error: 	A non-operational error occurred
+2026-04-12 03:26:10 error: 	Error caught: companyName is not defined
+2026-04-12 03:26:10 error: 	A non-operational error occurred
+2026-04-12 19:50:17 error: 	Error caught: invalid signature
+2026-04-12 19:50:17 error: 	A non-operational error occurred
+2026-04-12 19:50:18 error: 	Error caught: invalid signature
+2026-04-12 19:50:18 error: 	A non-operational error occurred
+2026-04-12 19:50:18 error: 	Error caught: invalid signature
+2026-04-12 19:50:18 error: 	A non-operational error occurred
+2026-04-12 19:50:20 error: 	Error caught: invalid signature
+2026-04-12 19:50:20 error: 	A non-operational error occurred
+2026-04-12 20:26:29 error: 	Error caught: Salary breakup not defined for this employee. Please define it first.
+2026-04-12 20:26:36 error: 	Error caught: Salary breakup not defined for this employee. Please define it first.
+2026-04-12 20:57:19 error: 	Error caught: Cannot read properties of undefined (reading '0')
+2026-04-12 20:57:19 error: 	A non-operational error occurred
+2026-04-12 20:57:19 error: 	Error caught: Cannot read properties of undefined (reading '0')
+2026-04-12 20:57:19 error: 	A non-operational error occurred

@@ -1,0 +1,80 @@
+import mongoose from "mongoose";
+
+const OrderSchema = new mongoose.Schema(
+  {
+    company_name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    client_name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    ordered_date: {
+      type: Date,
+      required: true,
+    },
+    invoice_number: {
+      type: String,
+      required: true,
+      trim: true,
+      unique: true,
+    },
+    po_number: {
+      type: String,
+      trim: true,
+    },
+    invoice_amount: {
+      type: Number,
+      required: true,
+    },
+    advance_payment: {
+      type: Number,
+      default: 0,
+    },
+    balance_due: {
+      type: Number,
+      default: function () {
+        return this.invoice_amount - this.advance_payment;
+      },
+    },
+    currency: {
+      type: String,
+      enum: ["INR", "USD", "EUR", "GBP", "JPY", "CNY"],
+      default: "INR",
+    },
+    etd: {
+      type: Date, // Estimated Time of Departure
+    },
+    eta: {
+      type: Date, // Estimated Time of Arrival
+    },
+    remarks: {
+      type: String,
+      trim: true,
+    },
+    status: {
+      type: String,
+      enum: [
+        "Order placed",
+        "Production going on",
+        "Ready to dispatch",
+        "Loaded",
+        "On the way to port",
+        "Arrive at port",
+        "Depart from port",
+        "In transit to destination",
+        "Arrived at destination",
+        "Completed",
+      ],
+      default: "Order placed",
+    },
+  },
+  {
+    timestamps: true, // adds createdAt and updatedAt automatically
+  }
+);
+
+export const Order = mongoose.model("Order", OrderSchema);

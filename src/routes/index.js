@@ -1,0 +1,38 @@
+import express from "express";
+import authRoutes from "./auth.routes.js";
+import dashboardRoutes from "./dashboard.routes.js";
+import productRoutes from "./products.routes.js";
+import rolesRoutes from "./role.routes.js";
+import userRoutes from "./users.routes.js";
+import vendorRoutes from "./vendor.routes.js";
+import customerRoutes from "./customer.routes.js";
+import inventoryRoutes from "./inventory.routes.js";
+import deliveryTicketRoutes from "./deliveryTicket.routes.js";
+import returnTicketRoutes from "./returnTicket.routes.js";
+import attendanceRoutes from "./attendance.routes.js";
+import salesRoutes from "./sales.routes.js";
+import quoteRoutes from "./quote.routes.js";
+import runningOrderRoutes from "./runningOrder.routes.js";
+import financeRoutes from "./finance.routes.js";
+import payrollRoutes from "./payroll.routes.js";
+
+const router = express.Router();
+
+router.use("/auth", authRoutes);
+router.use("/products", productRoutes);
+router.use("/users", userRoutes);
+router.use("/roles", rolesRoutes);
+router.use("/dashboard", dashboardRoutes);
+router.use("/vendors", vendorRoutes);
+router.use("/customers", customerRoutes);
+router.use("/inventory", inventoryRoutes);
+router.use("/delivery-tickets", deliveryTicketRoutes);
+router.use("/return-tickets", returnTicketRoutes);
+router.use("/attendance", attendanceRoutes);
+router.use("/sales", salesRoutes);
+router.use("/quote-tracks", quoteRoutes);
+router.use("/running-orders", runningOrderRoutes);
+router.use("/finance", financeRoutes);
+router.use("/payroll", payrollRoutes);
+
+export default router;
