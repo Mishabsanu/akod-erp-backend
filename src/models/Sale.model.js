@@ -67,6 +67,7 @@ const salesSchema = new mongoose.Schema(
       },
     ],
     attachments: [{ type: String }],
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },
   { timestamps: true }
 );

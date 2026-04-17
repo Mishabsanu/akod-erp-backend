@@ -18,7 +18,7 @@ export const getAll = asyncHandler(async (req, res) => {
 });
 
 export const create = asyncHandler(async (req, res) => {
-  const payload = req.body;
+  const payload = { ...req.body, createdBy: req.user.id };
   const newUser = await userService.createUser(payload);
   return successResponse(res, "User created successfully", 201, {
     user: newUser,

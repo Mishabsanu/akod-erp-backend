@@ -24,7 +24,8 @@ export const getOne = asyncHandler(async (req, res) => {
 });
 
 export const create = asyncHandler(async (req, res) => {
-  const order = await runningOrderService.createOrder(req.body);
+  const payload = { ...req.body, createdBy: req.user.id };
+  const order = await runningOrderService.createOrder(payload);
   return successResponse(res, "Order created successfully", 201, order);
 });
 

@@ -16,6 +16,7 @@ const SalaryBreakupSchema = new mongoose.Schema(
     esi: { type: Number, default: 0 },
     tds: { type: Number, default: 0 },
     otherDeductions: { type: Number, default: 0 },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },
   { timestamps: true }
 );

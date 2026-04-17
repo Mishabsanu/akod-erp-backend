@@ -42,6 +42,7 @@ const purchaseOrderSchema = new mongoose.Schema(
       enum: ["OPEN", "PARTIALLY_DELIVERED", "COMPLETED"],
       default: "OPEN",
     },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },
   { timestamps: true }
 );

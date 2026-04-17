@@ -345,6 +345,7 @@ export const create = async (data, user) => {
     date: enquiryDate,
     nextFollowUpDate: followUpDate,
     user: new mongoose.Types.ObjectId(user.id),
+    createdBy: new mongoose.Types.ObjectId(user.id),
     followUpHistory: [
       {
         status: "New Lead",

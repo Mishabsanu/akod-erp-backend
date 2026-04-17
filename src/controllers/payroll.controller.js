@@ -20,7 +20,8 @@ export const getBreakupByUserId = asyncHandler(async (req, res) => {
 });
 
 export const upsertBreakup = asyncHandler(async (req, res) => {
-  const breakup = await payrollService.upsertSalaryBreakup(req.body);
+  const payload = { ...req.body, createdBy: req.user.id };
+  const breakup = await payrollService.upsertSalaryBreakup(payload);
   return successResponse(res, "Salary breakup saved successfully", 200, { content: breakup });
 });
 
@@ -37,6 +38,7 @@ export const generateSlip = asyncHandler(async (req, res) => {
   const payload = {
     ...req.body,
     generatedBy: req.user._id,
+    createdBy: req.user.id,
   };
   const slip = await payrollService.generateSalarySlip(payload);
   return successResponse(res, "Salary slip generated successfully", 201, { content: slip });

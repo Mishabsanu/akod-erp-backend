@@ -31,7 +31,7 @@ export const getAll = asyncHandler(async (req, res) => {
 });
 
 export const create = asyncHandler(async (req, res) => {
-  const payload = req.body;
+  const payload = { ...req.body, createdBy: req.user.id };
   const newInventory = await inventoryService.createInventory(payload);
   return successResponse(res, "Inventory created successfully", 201, {
     inventory: newInventory,

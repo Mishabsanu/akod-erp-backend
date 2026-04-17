@@ -7,6 +7,7 @@ const ProductSchema = new mongoose.Schema(
     description: { type: String, required: true },
     unit: { type: String, required: true },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },
   { timestamps: true }
 );

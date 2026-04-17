@@ -71,6 +71,7 @@ const OrderSchema = new mongoose.Schema(
       ],
       default: "Order placed",
     },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },
   {
     timestamps: true, // adds createdAt and updatedAt automatically

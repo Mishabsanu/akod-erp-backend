@@ -3,7 +3,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { successResponse } from "../utils/response.js";
 
 export const AddDeliveryTicket = asyncHandler(async (req, res) => {
-  const savedTicket = await deliveryTicketService.addDeliveryTicket(req.body);
+  const payload = { ...req.body, createdBy: req.user.id };
+  const savedTicket = await deliveryTicketService.addDeliveryTicket(payload);
   return successResponse(
     res,
     "Delivery ticket created successfully and inventory updated",

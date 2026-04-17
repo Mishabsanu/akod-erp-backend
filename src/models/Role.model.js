@@ -31,6 +31,10 @@ const RoleSchema = new mongoose.Schema(
       sales: { type: PermissionSchema, default: () => ({}) },
       quote_track: { type: PermissionSchema, default: () => ({}) },
       running_order: { type: PermissionSchema, default: () => ({}) },
+      invoice: { type: PermissionSchema, default: () => ({}) },
+      payment: { type: PermissionSchema, default: () => ({}) },
+      expense: { type: PermissionSchema, default: () => ({}) },
+      payroll: { type: PermissionSchema, default: () => ({}) },
     },
 
     status: {
@@ -38,6 +42,7 @@ const RoleSchema = new mongoose.Schema(
       enum: ["active", "inactive"],
       default: "active",
     },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },
   { timestamps: true }
 );

@@ -17,7 +17,7 @@ export const getAll = asyncHandler(async (req, res) => {
 });
 
 export const create = asyncHandler(async (req, res) => {
-  const payload = req.body;
+  const payload = { ...req.body, createdBy: req.user.id };
   const newCustomer = await customerService.createCustomer(payload);
   return successResponse(res, "Customer created successfully", 201, {
     customer: newCustomer,

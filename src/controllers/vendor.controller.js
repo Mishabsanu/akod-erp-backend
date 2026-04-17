@@ -17,7 +17,7 @@ export const getAll = asyncHandler(async (req, res) => {
 });
 
 export const create = asyncHandler(async (req, res) => {
-  const payload = req.body;
+  const payload = { ...req.body, createdBy: req.user.id };
   const newVendor = await vendorService.createVendor(payload);
   return successResponse(res, "Vendor created successfully", 201, {
     vendor: newVendor,

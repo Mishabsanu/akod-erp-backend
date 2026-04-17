@@ -55,6 +55,7 @@ const ReturnTicketSchema = new mongoose.Schema(
     items: { type: [ItemSchema], required: true },
     deliveredBy: { type: DeliveredBySchema, required: true },
     receivedBy: { type: ReceivedBySchema, required: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },
   { timestamps: true }
 );

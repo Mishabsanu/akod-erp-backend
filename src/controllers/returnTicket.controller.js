@@ -3,7 +3,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 
 export const AddReturnTicket = asyncHandler(async (req, res) => {
-  const savedTicket = await returnTicketService.addReturnTicket(req.body);
+  const payload = { ...req.body, createdBy: req.user.id };
+  const savedTicket = await returnTicketService.addReturnTicket(payload);
   return successResponse(
     res,
     "Return ticket created successfully and inventory updated",

@@ -18,7 +18,7 @@ export const getAll = asyncHandler(async (req, res) => {
 });
 
 export const create = asyncHandler(async (req, res) => {
-  const payload = req.body;
+  const payload = { ...req.body, createdBy: req.user.id };
   const newRole = await roleService.createRole(payload);
   return successResponse(res, "Role created successfully", 201, {
     role: newRole,

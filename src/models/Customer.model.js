@@ -29,6 +29,7 @@ const CustomerSchema = new mongoose.Schema(
       enum: ["active", "inactive"],
       default: "active",
     },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     address: { type: String, trim: true, required: true },
     pincode: { type: String, trim: true, required: true },
     city: { type: String, trim: true, required: true },

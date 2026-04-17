@@ -37,6 +37,7 @@ const SalarySlipSchema = new mongoose.Schema(
     },
     paymentDate: { type: Date },
     generatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },
   { timestamps: true }
 );

@@ -25,7 +25,8 @@ export const getOne = asyncHandler(async (req, res) => {
 });
 
 export const create = asyncHandler(async (req, res) => {
-  const product = await productService.create(req.body);
+  const productData = { ...req.body, createdBy: req.user.id };
+  const product = await productService.create(productData);
   return successResponse(res, "Product created successfully", 201, product);
 });
 
