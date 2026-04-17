@@ -28,6 +28,7 @@ export const getAllUsers = async ({
   const [users, totalCount] = await Promise.all([
     User.find(query)
       .populate("role", "name")
+      .populate("createdBy", "name")
       .select("-password -refreshTokens -__v")
       .skip(skip)
       .limit(limit)
@@ -82,6 +83,7 @@ export const createUser = async (data) => {
     password,
     role,
     status,
+    createdBy: data.createdBy,
   });
 
   const u = user.toObject();
@@ -92,7 +94,7 @@ export const createUser = async (data) => {
 };
 
 export const getUserById = async (id) => {
-  return await User.findById(id).populate("role").select("-__v");
+  return await User.findById(id).populate("role").populate("createdBy", "name").select("-__v");
 };
 export const updateUser = async (id, data) => {
   console.log(data,'data');

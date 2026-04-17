@@ -46,6 +46,7 @@ export const getAllInventories = async ({
     Inventory.find(query)
       .populate("product", "name itemCode")
       .populate("vendor", "name")
+      .populate("createdBy", "name")
       .select("-__v")
       .skip(skip)
       .limit(limit)
@@ -100,6 +101,7 @@ export const createInventory = async (data) => {
       reference,
       orderedQty: quantity,
       availableQty: quantity,
+      createdBy: data.createdBy,
       history: [
         {
           type: "ADD_STOCK",

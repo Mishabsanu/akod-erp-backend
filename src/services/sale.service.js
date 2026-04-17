@@ -150,9 +150,20 @@ export const getAll = async (
       },
       { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
       {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      { $unwind: { path: "$createdBy", preserveNullAndEmptyArrays: true } },
+      {
         $project: {
           "user.password": 0,
           "user.__v": 0,
+          "createdBy.password": 0,
+          "createdBy.__v": 0,
         },
       },
     ]),
@@ -334,6 +345,7 @@ export const getAllLastEnquiries = async (user, { search = "" }) => {
 export const getById = async (id) => {
   return await Sale.findById(id)
     .populate("user", "name email")
+    .populate("createdBy", "name email")
     .populate("followUpHistory.updatedBy", "name email");
 };
 

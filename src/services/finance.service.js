@@ -8,7 +8,7 @@ import { Ledger } from "../models/Ledger.model.js";
 
 // --- Expenses ---
 export const getExpenseById = async (id) => {
-  return await Expense.findById(id)
+  return await Expense.findById(id).populate("createdBy", "name")
 };
 
 export const getAllExpenses = async (user, { search, companyName,category, status, startDate, endDate, page = 1, limit = 10 }) => {
@@ -30,6 +30,7 @@ export const getAllExpenses = async (user, { search, companyName,category, statu
   }
 
   const expenses = await Expense.find(query)
+    .populate("createdBy", "name")
     .sort({ date: -1 })
     .skip((page - 1) * limit)
     .limit(limit);
@@ -105,6 +106,7 @@ export const getAllInvoices = async (user, { search, status, startDate, endDate,
 
   const invoices = await Invoice.find(query)
     .populate("customerId", "name company")
+    .populate("createdBy", "name")
     .sort({ date: -1 })
     .skip((page - 1) * limit)
     .limit(limit);
@@ -125,7 +127,7 @@ export const createInvoice = async (data, user) => {
 };
 
 export const getInvoiceById = async (id) => {
-  return await Invoice.findById(id).populate("customerId", "name company");
+  return await Invoice.findById(id).populate("customerId", "name company").populate("createdBy", "name");
 };
 
 export const updateInvoice = async (id, data) => {
@@ -156,6 +158,7 @@ export const getAllPayments = async (user, { search, companyName,type, startDate
   }
 
   const payments = await Payment.find(query)
+    .populate("createdBy", "name")
     .sort({ date: -1 })
     .skip((page - 1) * limit)
     .limit(limit);
@@ -193,7 +196,7 @@ export const createPayment = async (data, user) => {
 };
 
 export const getPaymentById = async (id) => {
-  return await Payment.findById(id)
+  return await Payment.findById(id).populate("createdBy", "name")
 };
 
 export const deletePayment = async (id) => {
@@ -238,6 +241,7 @@ export const getLedgerEntries = async (user, { search, companyName, startDate, e
   }
 
   const entries = await Ledger.find(query)
+    .populate("createdBy", "name")
     .sort({ date: -1, createdAt: -1 })
     .skip((page - 1) * limit)
     .limit(limit);

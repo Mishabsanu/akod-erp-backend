@@ -35,6 +35,8 @@ const RoleSchema = new mongoose.Schema(
       payment: { type: PermissionSchema, default: () => ({}) },
       expense: { type: PermissionSchema, default: () => ({}) },
       payroll: { type: PermissionSchema, default: () => ({}) },
+      ledger: { type: PermissionSchema, default: () => ({}) },
+      accounts: { type: PermissionSchema, default: () => ({}) },
     },
 
     status: {

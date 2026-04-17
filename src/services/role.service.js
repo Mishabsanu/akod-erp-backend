@@ -14,7 +14,7 @@ export const getAllRoles = async ({
   if (status) query.status = status;
   const skip = (page - 1) * limit;
   const [roles, totalCount] = await Promise.all([
-    Role.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }),
+    Role.find(query).populate("createdBy", "name").skip(skip).limit(limit).sort({ createdAt: -1 }),
     Role.countDocuments(query),
   ]);
   const totalPages = Math.ceil(totalCount / limit);
@@ -39,12 +39,13 @@ export const createRole = async (data) => {
     name: name.trim(),
     permissions,
     status,
+    createdBy: data.createdBy,
   });
   return role;
 };
 
 export const getRoleById = async (id) => {
-  const role = await Role.findById(id).select("-__v");
+  const role = await Role.findById(id).populate("createdBy", "name").select("-__v");
   if (!role) throw createError("Role not found", 404);
   return role;
 };

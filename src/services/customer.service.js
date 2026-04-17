@@ -24,6 +24,7 @@ export const getAllCustomers = async ({
 
   const [customers, totalCount] = await Promise.all([
     Customer.find(query)
+      .populate("createdBy", "name")
       .select("-__v")
       .skip(skip)
       .limit(limit)

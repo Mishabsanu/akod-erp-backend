@@ -16,7 +16,11 @@ export const getAll = async ({ page = 1, limit = 10, search = "", status }) => {
   const skip = (Number(page) - 1) * Number(limit);
 
   const [products, totalCount] = await Promise.all([
-    Product.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+    Product.find(query)
+      .populate("createdBy", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit)),
     Product.countDocuments(query),
   ]);
 
@@ -31,7 +35,7 @@ export const getAll = async ({ page = 1, limit = 10, search = "", status }) => {
 };
 
 export const getById = async (id) => {
-  const product = await Product.findById(id);
+  const product = await Product.findById(id).populate("createdBy", "name");
   if (!product) throw createError("Product not found", 404);
   return product;
 };
