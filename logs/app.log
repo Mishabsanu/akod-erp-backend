@@ -26,3 +26,4 @@
 2026-04-12 20:57:19 error: 	A non-operational error occurred
 2026-04-12 20:57:19 error: 	Error caught: Cannot read properties of undefined (reading '0')
 2026-04-12 20:57:19 error: 	A non-operational error occurred
+2026-04-18 21:07:46 error: 	Error caught: DeliveryTicket validation failed: customerName: Cast to string failed for value "[ 'DELMON SCAF', 'DELMON SCAF' ]" (type Array) at path "customerName"

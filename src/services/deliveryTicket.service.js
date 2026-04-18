@@ -19,7 +19,7 @@ export const addDeliveryTicket = async (ticketData) => {
       );
     }
 
-    if (inventoryItem.stock < item.quantity) {
+    if (inventoryItem.availableQty < item.quantity) {
       throw createError(`Insufficient stock for item ${item.itemCode}`, 400);
     }
   }
