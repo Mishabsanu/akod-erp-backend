@@ -1,4 +1,6 @@
 import { Order } from "../models/RunningOrder.model.js";
+import { DeliveryTicket } from "../models/DeliveryTicket.model.js";
+import ReturnTicketModel from "../models/ReturnTicket.model.js";
 
 export const getAllOrders = async ({
   page = 1,
@@ -28,7 +30,11 @@ export const getAllOrders = async ({
   const skip = (Number(page) - 1) * Number(limit);
 
   const [orders, totalCount] = await Promise.all([
-    Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+    Order.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .populate("createdBy", "name"),
     Order.countDocuments(query),
   ]);
 
@@ -43,7 +49,7 @@ export const getAllOrders = async ({
 };
 
 export const getOrderById = async (id) => {
-  return Order.findById(id);
+  return Order.findById(id).populate("createdBy", "name");
 };
 
 export const createOrder = async (orderData) => {
@@ -59,4 +65,56 @@ export const updateOrderById = async (id, orderData) => {
 
 export const deleteOrderById = async (id) => {
   return Order.findByIdAndDelete(id);
+};
+
+export const getOrdersDropdown = async () => {
+  return Order.find({}, { _id: 1, invoice_number: 1, po_number: 1, client_name: 1, company_name: 1, items: 1, transaction_type: 1 }).sort({ createdAt: -1 });
+};
+
+export const getFulfillmentStats = async (id) => {
+  const order = await Order.findById(id);
+  if (!order) return null;
+
+  const [deliveries, returns] = await Promise.all([
+    DeliveryTicket.find({ runningOrderId: id }),
+    ReturnTicketModel.find({ runningOrderId: id })
+  ]);
+
+  const stats = order.items.map(orderItem => {
+    // Total delivered for this product
+    const deliveredQty = deliveries.reduce((acc, dn) => {
+      const dnItem = dn.items.find(i => i.productId.toString() === orderItem.productId.toString());
+      return acc + (dnItem ? dnItem.quantity : 0);
+    }, 0);
+
+    // Total returned for this product
+    const returnedQty = returns.reduce((acc, rn) => {
+      const rnItem = rn.items.find(i => i.productId.toString() === orderItem.productId.toString());
+      return acc + (rnItem ? rnItem.returnQty : 0);
+    }, 0);
+
+    const netDelivered = deliveredQty - returnedQty;
+    const pendingQty = orderItem.quantity - netDelivered;
+
+    return {
+      productId: orderItem.productId,
+      name: orderItem.name,
+      itemCode: orderItem.itemCode,
+      unit: orderItem.unit,
+      orderedQty: orderItem.quantity,
+      deliveredQty,
+      returnedQty,
+      netDelivered,
+      pendingQty: Math.max(0, pendingQty)
+    };
+  });
+
+  return {
+    orderStatus: order.status,
+    items: stats,
+    tickets: {
+      deliveries: deliveries.map(d => ({ _id: d._id, ticketNo: d.ticketNo, date: d.deliveryDate, qty: d.items.reduce((a, b) => a + b.quantity, 0) })),
+      returns: returns.map(r => ({ _id: r._id, ticketNo: r.ticketNo, date: r.returnDate, qty: r.items.reduce((a, b) => a + b.returnQty, 0) }))
+    }
+  };
 };

@@ -10,6 +10,7 @@ import {
 } from "../controllers/deliveryTicket.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { allowRoles } from "../middleware/role.middleware.js";
+import { uploadDisk } from "../config/upload.js";
 
 const router = express.Router();
 router.get(
@@ -31,6 +32,10 @@ router.post(
   "/",
   authMiddleware,
   allowRoles("delivery_ticket:create"),
+  uploadDisk.fields([
+    { name: "signedTicket", maxCount: 1 },
+    { name: "supportingDocs", maxCount: 10 },
+  ]),
   AddDeliveryTicket
 );
 router.get(
@@ -43,6 +48,10 @@ router.put(
   "/:id",
   authMiddleware,
   allowRoles("delivery_ticket:update"),
+  uploadDisk.fields([
+    { name: "signedTicket", maxCount: 1 },
+    { name: "supportingDocs", maxCount: 10 },
+  ]),
   update
 );
 router.get("/:id", authMiddleware, allowRoles("delivery_ticket:view"), getOne);

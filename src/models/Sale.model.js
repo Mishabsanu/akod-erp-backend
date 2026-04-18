@@ -46,12 +46,7 @@ const salesSchema = new mongoose.Schema(
     nextFollowUpDate: { type: String },
     remarks: { type: String, trim: true },
     businessType: { type: String, trim: true },
-    nearestPort: { type: String, trim: true },
-    platform: {
-      type: String,
-      enum: ["Akod Safe", "Akod Tech", "Akod Scaffolding", "Akod Food", "Avoma", "Other"],
-      default: "Other",
-    },
+    contactedBy: { type: String, trim: true },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

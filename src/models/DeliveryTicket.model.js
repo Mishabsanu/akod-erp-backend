@@ -57,7 +57,12 @@ const DeliveryTicketSchema = new mongoose.Schema(
 
     deliveredBy: { type: DeliveredBySchema, required: true },
     receivedBy: { type: ReceivedBySchema, required: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+    runningOrderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    attachments: {
+      signedTicket: { type: String },
+      supportingDocs: [{ type: String }]
+    }
   },
   { timestamps: true }
 );

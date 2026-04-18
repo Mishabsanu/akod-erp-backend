@@ -33,9 +33,8 @@ export const mapRowToSale = async (row, index) => {
     date: formatToDDMMYYYY(r.date),
     nextFollowUpDate: formatToDDMMYYYY(r.nextfollowupdate) || "",
     remarks: r.remarks || "",
-    nearestPort: r.nearestport || "",
     businessType: r.businesstype || "",
-    platform: r.platform || "Other",
+    contactedBy: r.contactedby || "",
     status: r.status || "New Lead",
   };
   return sale;

@@ -4,12 +4,10 @@ const OrderSchema = new mongoose.Schema(
   {
     company_name: {
       type: String,
-      required: true,
       trim: true,
     },
     client_name: {
       type: String,
-      required: true,
       trim: true,
     },
     ordered_date: {
@@ -28,17 +26,24 @@ const OrderSchema = new mongoose.Schema(
     },
     invoice_amount: {
       type: Number,
-      required: true,
     },
     advance_payment: {
       type: Number,
       default: 0,
     },
+    items: [
+      {
+        productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+        name: String,
+        itemCode: String,
+        description: String,
+        unit: String,
+        quantity: { type: Number, default: 1 }
+      }
+    ],
     balance_due: {
       type: Number,
-      default: function () {
-        return this.invoice_amount - this.advance_payment;
-      },
+      default: 0,
     },
     currency: {
       type: String,
@@ -70,6 +75,12 @@ const OrderSchema = new mongoose.Schema(
         "Completed",
       ],
       default: "Order placed",
+    },
+    transaction_type: {
+      type: String,
+      enum: ["Sale", "Hire", "Contract"],
+      default: "Sale",
+      required: true,
     },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },

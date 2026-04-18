@@ -47,3 +47,16 @@ export const remove = asyncHandler(async (req, res) => {
   }
   return successResponse(res, "Order deleted successfully", 200, {});
 });
+
+export const getDropdown = asyncHandler(async (req, res) => {
+  const result = await runningOrderService.getOrdersDropdown();
+  return successResponse(res, "Dropdown data fetched successfully", 200, result);
+});
+
+export const getFulfillment = asyncHandler(async (req, res) => {
+  const result = await runningOrderService.getFulfillmentStats(req.params.id);
+  if (!result) {
+    throw createError("Order not found", 404);
+  }
+  return successResponse(res, "Fulfillment data fetched successfully", 200, result);
+});

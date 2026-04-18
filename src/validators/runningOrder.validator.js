@@ -14,37 +14,17 @@ const statusEnum = [
 ];
 
 const currencyEnum = ["INR", "USD", "EUR", "GBP", "JPY", "CNY"];
+const transactionTypeEnum = ["Sale", "Hire", "Contract"];
 
 export const createRunningOrderValidator = [
-  body("company_name").notEmpty().withMessage("Company name is required"),
-  body("client_name").notEmpty().withMessage("Client name is required"),
+  body("company_name").optional().isString(),
+  body("client_name").optional().isString(),
   body("ordered_date")
     .notEmpty()
     .withMessage("Ordered date is required")
     .isISO8601()
     .toDate(),
   body("invoice_number").notEmpty().withMessage("Invoice number is required"),
-  body("po_number").optional().isString(),
-  body("invoice_amount")
-    .notEmpty()
-    .withMessage("Invoice amount is required")
-    .isNumeric(),
-  body("advance_payment").optional().isNumeric(),
-  body("currency").optional().isIn(currencyEnum),
-  body("etd").optional().isISO8601().toDate(),
-  body("eta").optional().isISO8601().toDate(),
-  body("remarks").optional().isString(),
-  body("status").optional().isIn(statusEnum),
-];
-
-export const updateRunningOrderValidator = [
-  body("company_name").optional().notEmpty().withMessage("Company name is required"),
-  body("client_name").optional().notEmpty().withMessage("Client name is required"),
-  body("ordered_date").optional().isISO8601().toDate(),
-  body("invoice_number")
-    .optional()
-    .notEmpty()
-    .withMessage("Invoice number is required"),
   body("po_number").optional().isString(),
   body("invoice_amount").optional().isNumeric(),
   body("advance_payment").optional().isNumeric(),
@@ -53,4 +33,24 @@ export const updateRunningOrderValidator = [
   body("eta").optional().isISO8601().toDate(),
   body("remarks").optional().isString(),
   body("status").optional().isIn(statusEnum),
+  body("transaction_type")
+    .notEmpty()
+    .withMessage("Transaction type is required")
+    .isIn(transactionTypeEnum),
+];
+
+export const updateRunningOrderValidator = [
+  body("company_name").optional().isString(),
+  body("client_name").optional().isString(),
+  body("ordered_date").optional().isISO8601().toDate(),
+  body("invoice_number").optional().isString(),
+  body("po_number").optional().isString(),
+  body("invoice_amount").optional().isNumeric(),
+  body("advance_payment").optional().isNumeric(),
+  body("currency").optional().isIn(currencyEnum),
+  body("etd").optional().isISO8601().toDate(),
+  body("eta").optional().isISO8601().toDate(),
+  body("remarks").optional().isString(),
+  body("status").optional().isIn(statusEnum),
+  body("transaction_type").optional().isIn(transactionTypeEnum),
 ];
