@@ -15,6 +15,9 @@ import quoteRoutes from "./quote.routes.js";
 import runningOrderRoutes from "./runningOrder.routes.js";
 import financeRoutes from "./finance.routes.js";
 import payrollRoutes from "./payroll.routes.js";
+import fleetRoutes from "./fleet.routes.js";
+import facilityRoutes from "./facility.routes.js";
+import workerRoutes from "./worker.routes.js";
 
 const router = express.Router();
 
@@ -34,5 +37,8 @@ router.use("/quote-tracks", quoteRoutes);
 router.use("/running-orders", runningOrderRoutes);
 router.use("/finance", financeRoutes);
 router.use("/payroll", payrollRoutes);
+router.use("/fleet", fleetRoutes);
+router.use("/facilities", facilityRoutes);
+router.use("/workers", workerRoutes);
 
 export default router;
