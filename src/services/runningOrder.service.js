@@ -41,7 +41,7 @@ export const getAllOrders = async ({
   const totalPages = Math.ceil(totalCount / Number(limit));
 
   return {
-    orders,
+    content: orders,
     totalCount,
     totalPages,
     currentPage: Number(page),
