@@ -13,6 +13,7 @@ router.get("/expenses", financeController.getExpenses);
 router.get("/expenses/:id", financeController.getExpenseById);
 router.post("/expenses", financeController.addExpense);
 router.put("/expenses/:id", financeController.editExpense);
+router.patch("/expenses/:id/approve", financeController.approveExpense);
 router.delete("/expenses/:id", financeController.deleteExpense);
 
 // --- Invoices ---

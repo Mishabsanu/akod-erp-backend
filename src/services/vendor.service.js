@@ -25,6 +25,7 @@ export const getAllVendors = async ({
   const [vendors, totalCount] = await Promise.all([
     Vendor.find(query)
       .select("-__v")
+      .populate("createdBy", "name")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 }),
@@ -65,7 +66,7 @@ export const createVendor = async (data) => {
 };
 
 export const getVendorById = async (id) => {
-  return await Vendor.findById(id).select("-__v");
+  return await Vendor.findById(id).select("-__v").populate("createdBy", "name");
 };
 
 export const updateVendor = async (id, data) => {

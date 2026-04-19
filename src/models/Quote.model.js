@@ -41,6 +41,8 @@ const lineItemSchema = new mongoose.Schema({
 const quoteTrackSchema = new mongoose.Schema(
   {
     clientName: { type: String, required: true },
+    companyName: { type: String },
+    quoteNo: { type: String },
 
     // Currency (INR / USD)
     currency: { type: String, enum: ["INR", "USD"], default: "INR" },

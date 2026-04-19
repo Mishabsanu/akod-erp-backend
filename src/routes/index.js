@@ -18,6 +18,10 @@ import payrollRoutes from "./payroll.routes.js";
 import fleetRoutes from "./fleet.routes.js";
 import facilityRoutes from "./facility.routes.js";
 import workerRoutes from "./worker.routes.js";
+import productionRoutes from "./production.routes.js";
+import leaveRoutes from "./leave.routes.js";
+import workerUtilityRoutes from "./workerUtility.routes.js";
+import utilityItemRoutes from "./utilityItem.routes.js";
 
 const router = express.Router();
 
@@ -40,5 +44,9 @@ router.use("/payroll", payrollRoutes);
 router.use("/fleet", fleetRoutes);
 router.use("/facilities", facilityRoutes);
 router.use("/workers", workerRoutes);
+router.use("/production", productionRoutes);
+router.use("/leaves", leaveRoutes);
+router.use("/worker-utilities", workerUtilityRoutes);
+router.use("/utility-items", utilityItemRoutes);
 
 export default router;

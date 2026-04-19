@@ -65,7 +65,7 @@ export const createCustomer = async (data) => {
 };
 
 export const getCustomerById = async (id) => {
-  return await Customer.findById(id).select("-__v");
+  return await Customer.findById(id).select("-__v").populate("createdBy", "name");
 };
 
 export const updateCustomer = async (id, data) => {

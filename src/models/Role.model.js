@@ -40,6 +40,9 @@ const RoleSchema = new mongoose.Schema(
       fleet: { type: PermissionSchema, default: () => ({}) },
       facility: { type: PermissionSchema, default: () => ({}) },
       worker: { type: PermissionSchema, default: () => ({}) },
+      production: { type: PermissionSchema, default: () => ({}) },
+      leave: { type: PermissionSchema, default: () => ({}) },
+      utility: { type: PermissionSchema, default: () => ({}) },
     },
 
     status: {

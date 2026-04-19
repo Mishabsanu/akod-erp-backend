@@ -23,6 +23,11 @@ export const editExpense = asyncHandler(async (req, res) => {
   return successResponse(res, "Expense updated successfully", 200, expense);
 });
 
+export const approveExpense = asyncHandler(async (req, res) => {
+  const expense = await financeService.approveExpense(req.params.id, req.user);
+  return successResponse(res, "Expense approved successfully", 200, expense);
+});
+
 export const deleteExpense = asyncHandler(async (req, res) => {
   await financeService.deleteExpense(req.params.id);
   return successResponse(res, "Expense deleted successfully", 200);

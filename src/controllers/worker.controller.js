@@ -16,12 +16,21 @@ export const getWorker = asyncHandler(async (req, res) => {
 
 export const createWorker = asyncHandler(async (req, res) => {
   const data = { ...req.body, createdBy: req.user.id };
-  // Handle document files if present in multipart request
-  if (req.files && req.files.length > 0) {
-    // This assumes a specific structure for documents in the request
-    // For simplicity, we'll map them if the structure matches or handle manually
-    // In a real scenario, we might need more complex logic to match files to doc types
+  
+  // Handle named document fields from multer.fields
+  if (req.files) {
+    const fileFields = [
+      'photo', 'cv', 'qidDoc', 'passportDoc', 
+      'insuranceDoc', 'healthCardDoc', 'certificateDoc'
+    ];
+    
+    fileFields.forEach(field => {
+      if (req.files[field] && req.files[field][0]) {
+        data[field] = req.files[field][0].path;
+      }
+    });
   }
+
   const worker = await workerService.createWorker(data);
   return successResponse(res, "Worker created successfully", 201, worker);
 });

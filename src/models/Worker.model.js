@@ -11,6 +11,14 @@ const workerSchema = new mongoose.Schema(
     qidNo: { type: String, trim: true }, // Qatar ID
     joinDate: { type: String },
     facilityId: { type: mongoose.Schema.Types.ObjectId, ref: "Facility" }, // Current Camp/Room
+    photo: { type: String },
+    cv: { type: String },
+    qidDoc: { type: String },
+    passportDoc: { type: String },
+    insuranceDoc: { type: String },
+    healthCardDoc: { type: String },
+    certificateDoc: { type: String },
+    certificateName: { type: String },
     documents: [
       {
         docType: { type: String, enum: ["Passport", "QID", "Contract", "Other"] },

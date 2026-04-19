@@ -24,7 +24,7 @@ export const getAll = async ({ page = 1, limit = 10, search = "", status }) => {
   }
   const skip = (Number(page) - 1) * Number(limit);
   const [quotes, totalCount] = await Promise.all([
-    Quote.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+    Quote.find(query).populate('createdBy', 'name').sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
     Quote.countDocuments(query),
   ]);
 
@@ -39,15 +39,53 @@ export const getAll = async ({ page = 1, limit = 10, search = "", status }) => {
 };
 
 export const getById = async (id) => {
-  return Quote.findById(id);
+  return Quote.findById(id).populate('createdBy', 'name');
+};
+
+const calculateTotals = (data) => {
+  if (!data.items || !Array.isArray(data.items)) return data;
+
+  let totalWeight = 0;
+  let totalItemCost = 0;
+  let totalQty = 0;
+  let totalGrossMargin = 0;
+  let totalSellingPrice = 0;
+
+  data.items.forEach((it) => {
+    totalWeight += Number(it.totalWeight || 0);
+    totalItemCost += Number(it.totalCost || 0);
+    totalQty += Number(it.qty || 0);
+    totalGrossMargin += Number(it.grossMargin || 0);
+    totalSellingPrice += Number(it.totalSellingPrice || 0);
+  });
+
+  const totalShippingCost = (Number(data.totalContainers) || 0) * (Number(data.costPerContainer) || 0);
+  const shippingPercentage = totalItemCost > 0 ? (totalShippingCost / totalItemCost) * 100 : 0;
+
+  return {
+    ...data,
+    totalWeight,
+    totalItemCost,
+    totalQty,
+    totalGrossMargin,
+    totalSellingPrice,
+    totalShippingCost,
+    shippingPercentage,
+  };
 };
 
 export const create = async (data) => {
-  return Quote.create(data);
+  const calculatedData = calculateTotals(data);
+  // Simple quoteNo generation: Q-TIMESTAMP
+  if (!calculatedData.quoteNo) {
+    calculatedData.quoteNo = `QT-${Date.now().toString().slice(-6)}`;
+  }
+  return Quote.create(calculatedData);
 };
 
 export const update = async (id, data) => {
-  return Quote.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+  const calculatedData = calculateTotals(data);
+  return Quote.findByIdAndUpdate(id, calculatedData, { new: true, runValidators: true });
 };
 
 export const remove = async (id) => {

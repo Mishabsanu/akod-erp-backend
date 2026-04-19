@@ -16,6 +16,8 @@ const vehicleSchema = new mongoose.Schema(
       default: "active" 
     },
     remarks: { type: String, trim: true },
+    insuranceExpiry: { type: Date },
+    registrationExpiry: { type: Date },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },
   { timestamps: true }

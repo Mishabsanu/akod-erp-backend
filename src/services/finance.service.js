@@ -11,7 +11,7 @@ export const getExpenseById = async (id) => {
   return await Expense.findById(id).populate("createdBy", "name")
 };
 
-export const getAllExpenses = async (user, { search, companyName,category, status, startDate, endDate, page = 1, limit = 10 }) => {
+export const getAllExpenses = async (user, { search, companyName,category, status, isApproved, startDate, endDate, page = 1, limit = 10 }) => {
   const query = {};
   if (search) {
     query.$or = [
@@ -23,6 +23,8 @@ export const getAllExpenses = async (user, { search, companyName,category, statu
   if (companyName) query.companyName = { $regex: companyName, $options: "i" };
   if (category) query.category = category;
   if (status) query.status = status;
+  if (isApproved !== undefined) query.isApproved = isApproved === 'true' || isApproved === true;
+  
   if (startDate || endDate) {
     query.date = {};
     if (startDate) query.date.$gte = startDate;
@@ -46,17 +48,27 @@ export const getAllExpenses = async (user, { search, companyName,category, statu
 };
 
 export const createExpense = async (data, user) => {
+  const expense = await Expense.create({ ...data, createdBy: user.id, isApproved: false });
+  return expense;
+};
 
-  const expense = await Expense.create({ ...data, createdBy: user.id });
-  
-  // Create Ledger entry with snapshot balance and companyName
+export const approveExpense = async (id, user) => {
+  const expense = await Expense.findById(id);
+  if (!expense) throw new Error("Expense not found");
+  if (expense.isApproved) return expense;
+
+  expense.isApproved = true;
+  expense.approvedBy = user.id;
+  await expense.save();
+
+  // Create Ledger entry ONLY on approval
   await Ledger.create({
-    date: data.date,
-    description: `Expense: ${data.category} - ${data.description || ''}`,
-    companyName: data.companyName,
-    debit: data.totalAmount,
+    date: expense.date,
+    description: `Expense: ${expense.category} - ${expense.description || ''}`,
+    companyName: expense.companyName,
+    debit: expense.totalAmount,
     credit: 0,
-    balance: data.totalAmount,
+    balance: expense.totalAmount,
     referenceId: expense._id,
     referenceType: 'Expense',
     createdBy: user.id
@@ -68,17 +80,19 @@ export const createExpense = async (data, user) => {
 export const updateExpense = async (id, data) => {
   const expense = await Expense.findByIdAndUpdate(id, data, { new: true });
   
-  // Sync Ledger
-  await Ledger.findOneAndUpdate(
-    { referenceId: id, referenceType: 'Expense' },
-    {
-      date: data.date,
-      description: `Expense: ${data.category} - ${data.description || ''}`,
-      companyName: data.companyName,
-      debit: data.totalAmount,
-      balance: data.totalAmount
-    }
-  );
+  // Sync Ledger ONLY if it was already approved
+  if (expense.isApproved) {
+    await Ledger.findOneAndUpdate(
+      { referenceId: id, referenceType: 'Expense' },
+      {
+        date: data.date,
+        description: `Expense: ${data.category} - ${data.description || ''}`,
+        companyName: data.companyName,
+        debit: data.totalAmount,
+        balance: data.totalAmount
+      }
+    );
+  }
 
   return expense;
 };

@@ -20,6 +20,8 @@ const expenseSchema = new mongoose.Schema(
       default: 'paid',
       enum: ['pending', 'paid', 'cancelled']
     },
+    isApproved: { type: Boolean, default: false },
+    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     attachments: [{ type: String }],
     companyName: { type: String, trim: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
