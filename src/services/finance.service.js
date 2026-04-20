@@ -47,8 +47,28 @@ export const getAllExpenses = async (user, { search, companyName,category, statu
   };
 };
 
+export const getLatestExpenseNo = async () => {
+    const latest = await Expense.findOne().sort({ expenseId: -1 }).lean();
+    let nextNo = "EXP-00001";
+    if (latest?.expenseId) {
+        const lastNumber = parseInt(latest.expenseId.replace("EXP-", ""), 10);
+        if (!isNaN(lastNumber)) {
+            nextNo = `EXP-${String(lastNumber + 1).padStart(5, "0")}`;
+        }
+    }
+    return nextNo;
+};
+
 export const createExpense = async (data, user) => {
-  const expense = await Expense.create({ ...data, createdBy: user.id, isApproved: false });
+  const expenseId = await getLatestExpenseNo();
+  const expense = await Expense.create({ 
+    ...data, 
+    expenseId,
+    createdBy: user.id, 
+    isApproved: false,
+    paidTotal: 0,
+    balance: data.totalAmount || data.amount || 0 
+  });
   return expense;
 };
 
@@ -64,7 +84,7 @@ export const approveExpense = async (id, user) => {
   // Create Ledger entry ONLY on approval
   await Ledger.create({
     date: expense.date,
-    description: `Expense: ${expense.category} - ${expense.description || ''}`,
+    description: `Expense [${expense.expenseId}]: ${expense.category} - ${expense.description || ''} (Mode: ${expense.modeOfPayment})`,
     companyName: expense.companyName,
     debit: expense.totalAmount,
     credit: 0,
@@ -86,7 +106,7 @@ export const updateExpense = async (id, data) => {
       { referenceId: id, referenceType: 'Expense' },
       {
         date: data.date,
-        description: `Expense: ${data.category} - ${data.description || ''}`,
+        description: `Expense [${expense.expenseId}]: ${data.category} - ${data.description || ''} (Mode: ${data.modeOfPayment})`,
         companyName: data.companyName,
         debit: data.totalAmount,
         balance: data.totalAmount
@@ -154,7 +174,7 @@ export const deleteInvoice = async (id) => {
 };
 
 // --- Payments ---
-export const getAllPayments = async (user, { search, companyName,type, startDate, endDate, page = 1, limit = 10 }) => {
+export const getAllPayments = async (user, { search, companyName, type, referenceId, referenceType, startDate, endDate, page = 1, limit = 10 }) => {
   const query = {};
   if (search) {
     query.$or = [
@@ -165,6 +185,8 @@ export const getAllPayments = async (user, { search, companyName,type, startDate
   }
   if (companyName) query.companyName = { $regex: companyName, $options: "i" };
   if (type) query.type = type;
+  if (referenceId) query.referenceId = referenceId;
+  if (referenceType) query.referenceType = referenceType;
   if (startDate || endDate) {
     query.date = {};
     if (startDate) query.date.$gte = startDate;
@@ -187,16 +209,43 @@ export const getAllPayments = async (user, { search, companyName,type, startDate
   };
 };
 
+export const getLatestPaymentNo = async () => {
+    const latest = await Payment.findOne().sort({ paymentId: -1 }).lean();
+    let nextNo = "PAY-00001";
+    if (latest?.paymentId) {
+        const lastNumber = parseInt(latest.paymentId.replace("PAY-", ""), 10);
+        if (!isNaN(lastNumber)) {
+            nextNo = `PAY-${String(lastNumber + 1).padStart(5, "0")}`;
+        }
+    }
+    return nextNo;
+};
+
 export const createPayment = async (data, user) => {
+  const paymentId = await getLatestPaymentNo();
+  const payment = await Payment.create({ ...data, paymentId, createdBy: user.id });
 
-
-  const payment = await Payment.create({ ...data, createdBy: user.id });
+  // Update Expense balance if this payment is linked to one
+  if (data.referenceType === 'Expense' && data.referenceId) {
+    const expense = await Expense.findById(data.referenceId);
+    if (expense) {
+      expense.paidTotal = (expense.paidTotal || 0) + Number(data.amount);
+      expense.balance = Math.max(0, expense.totalAmount - expense.paidTotal);
+      
+      if (expense.balance === 0) {
+        expense.status = 'paid';
+      } else if (expense.paidTotal > 0) {
+        expense.status = 'partially_paid';
+      }
+      await expense.save();
+    }
+  }
 
   // Create Ledger entry for tracking movement in the allocation account
   await Ledger.create({
     date: data.date,
 
-    description: `Payment ${data.type}: ${data.remarks || 'Standard Registry Entry'}`,
+    description: `Payment ${data.type}: ${data.remarks || 'Standard Registry Entry'} (Mode: ${data.modeOfPayment || 'N/A'})`,
     companyName: data.companyName,
     debit: data.type === 'Paid' ? data.amount : 0,
     credit: data.type === 'Received' ? data.amount : 0,
@@ -226,7 +275,7 @@ export const updatePayment = async (id, data) => {
     { referenceId: id, referenceType: 'Payment' },
     {
       date: data.date,
-      description: `Payment ${data.type}: ${data.remarks || 'Standard Registry Entry'}`,
+      description: `Payment ${data.type} [${payment.paymentId}]: ${data.remarks || 'Standard Registry Entry'} (Mode: ${data.modeOfPayment})`,
       companyName: data.companyName,
       debit: data.type === 'Paid' ? data.amount : 0,
       credit: data.type === 'Received' ? data.amount : 0,

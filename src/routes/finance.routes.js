@@ -10,6 +10,7 @@ router.use(authMiddleware);
 
 // --- Expenses ---
 router.get("/expenses", financeController.getExpenses);
+router.get("/expenses/next-id", financeController.getNextExpenseId);
 router.get("/expenses/:id", financeController.getExpenseById);
 router.post("/expenses", financeController.addExpense);
 router.put("/expenses/:id", financeController.editExpense);
@@ -25,6 +26,7 @@ router.delete("/invoices/:id", financeController.deleteInvoice);
 
 // --- Payments ---
 router.get("/payments", financeController.getPayments);
+router.get("/payments/next-id", financeController.getNextPaymentId);
 router.get("/payments/:id", financeController.getPaymentById);
 router.post("/payments", financeController.addPayment);
 router.put("/payments/:id", financeController.editPayment);

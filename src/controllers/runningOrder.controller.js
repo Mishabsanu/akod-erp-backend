@@ -60,3 +60,8 @@ export const getFulfillment = asyncHandler(async (req, res) => {
   }
   return successResponse(res, "Fulfillment data fetched successfully", 200, result);
 });
+
+export const GetLatestOrderNo = asyncHandler(async (req, res) => {
+    const nextNo = await runningOrderService.getLatestRunningOrderNo();
+    return successResponse(res, "Next order number fetched successfully", 200, nextNo);
+});

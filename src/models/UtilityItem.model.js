@@ -45,6 +45,14 @@ const utilityItemSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    groupId: {
+      type: String, // Groups associated variants together
+      index: true,
+    },
+    isVariant: {
+      type: Boolean,
+      default: false,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

@@ -11,6 +11,7 @@ import { validate } from "../middleware/validate.middleware.js";
 const router = express.Router();
 
 router.get("/", authMiddleware, allowRoles("running_order:view"), runningOrderCtrl.list);
+router.get("/latest-no", authMiddleware, allowRoles("running_order:create"), runningOrderCtrl.GetLatestOrderNo);
 router.get("/dropdown", authMiddleware, allowRoles("running_order:view"), runningOrderCtrl.getDropdown);
 router.post("/", authMiddleware, allowRoles("running_order:create"), createRunningOrderValidator, validate, runningOrderCtrl.create);
 

@@ -94,6 +94,9 @@ export const getDeliveryTickets = async (queryParams) => {
       { poNo: { $regex: search, $options: "i" } },
       { invoiceNo: { $regex: search, $options: "i" } },
       { noteCategory: { $regex: search, $options: "i" } },
+      { "deliveredBy.deliveredByName": { $regex: search, $options: "i" } },
+      { projectLocation: { $regex: search, $options: "i" } },
+      { subject: { $regex: search, $options: "i" } },
     ];
   }
 
@@ -116,6 +119,7 @@ export const getDeliveryTickets = async (queryParams) => {
 
   const [tickets, totalCount] = await Promise.all([
     DeliveryTicket.find(query)
+      .populate("createdBy", "name")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(pageSize),
@@ -130,7 +134,7 @@ export const getDeliveryTickets = async (queryParams) => {
   };
 };
 export const getDeliveryTicketById = async (id) => {
-  return await DeliveryTicket.findById(id).select("-__v").lean();
+  return await DeliveryTicket.findById(id).populate("createdBy", "name").select("-__v").lean();
 };
 export const getLatestDeliveryTicketNo = async () => {
   const latest = await DeliveryTicket.findOne()
@@ -163,87 +167,86 @@ export const updateDeliveryTicket = async (id, payload) => {
     throw createError("Delivery Ticket not found", 404);
   }
 
-  /* ---------------- RESTORE OLD INVENTORY ---------------- */
-  for (const oldItem of existingTicket.items) {
-    const inventoryItem = await Inventory.findOne({
-      itemCode: oldItem.itemCode,
-    });
-    if (!inventoryItem) continue; // Should not happen if data integrity is maintained
+  // Determine if inventory needs reconciliation (only if items are provided and different)
+  const shouldReconcileInventory = items && Array.isArray(items);
 
-    inventoryItem.availableQty += oldItem.quantity; // restore
-    inventoryItem.history.push({
-      type: "DELIVERY_ROLLBACK",
-      stock: oldItem.quantity,
-      customerId: customerId,
-      note: `Reverted delivery from ${existingTicket.ticketNo}`,
-      date: new Date(),
-    });
-    await inventoryItem.save();
-  }
-  console.log(items, 'items');
+  if (shouldReconcileInventory) {
+    /* ---------------- RESTORE OLD INVENTORY ---------------- */
+    for (const oldItem of existingTicket.items) {
+      const inventoryItem = await Inventory.findOne({
+        itemCode: oldItem.itemCode,
+      });
+      if (!inventoryItem) continue;
 
-  /* ---------------- VALIDATE NEW INVENTORY ---------------- */
-  for (const item of items) {
-    const inventoryItem = await Inventory.findOne({
-      itemCode: item.itemCode
-    });
-
-    if (!inventoryItem) {
-      throw createError(
-        `Item with code ${item.itemCode} not found in inventory`,
-        400
-      );
+      inventoryItem.availableQty += oldItem.quantity;
+      inventoryItem.history.push({
+        type: "DELIVERY_ROLLBACK",
+        stock: oldItem.quantity,
+        customerId: customerId || existingTicket.customerId,
+        note: `Reverted delivery from ${existingTicket.ticketNo} (Update)`,
+        date: new Date(),
+      });
+      await inventoryItem.save();
     }
 
-    if (inventoryItem.availableQty < item.quantity) {
-      throw createError(`Insufficient stock for item ${item.itemCode}`, 400);
-    }
-  }
-
-  /* ---------------- APPLY NEW INVENTORY ---------------- */
-  for (const item of items) {
-    const inventoryItem = await Inventory.findOne({ itemCode: item.itemCode });
-    if (!inventoryItem) {
-      throw createError(
-        `Item with code ${item.itemCode} not found in inventory`,
-        400
-      );
+    /* ---------------- VALIDATE NEW INVENTORY ---------------- */
+    for (const item of items) {
+      const inventoryItem = await Inventory.findOne({ itemCode: item.itemCode });
+      if (!inventoryItem) {
+        throw createError(`Item with code ${item.itemCode} not found in inventory`, 400);
+      }
+      if (inventoryItem.availableQty < item.quantity) {
+        throw createError(`Insufficient stock for item ${item.itemCode}`, 400);
+      }
     }
 
-    // Validation is done before this block
-    inventoryItem.availableQty -= item.quantity;
-    inventoryItem.history.push({
-      type: "DELIVERY",
-      stock: item.quantity,
-      customerId: customerId,
-      note: `Updated delivery via ${existingTicket.ticketNo}`,
-      date: new Date(),
-    });
-    await inventoryItem.save();
+    /* ---------------- APPLY NEW INVENTORY ---------------- */
+    for (const item of items) {
+      const inventoryItem = await Inventory.findOne({ itemCode: item.itemCode });
+      if (inventoryItem) {
+        inventoryItem.availableQty -= item.quantity;
+        inventoryItem.history.push({
+          type: "DELIVERY",
+          stock: item.quantity,
+          customerId: customerId || existingTicket.customerId,
+          note: `Updated delivery via ${existingTicket.ticketNo}`,
+          date: new Date(),
+        });
+        await inventoryItem.save();
+      }
+    }
   }
 
   /* ---------------- UPDATE DELIVERY TICKET ---------------- */
-  existingTicket.set({
-    ...rest,
-    items: items.map((item) => ({
+  const updateData = { ...rest };
+
+  if (shouldReconcileInventory) {
+    updateData.items = items.map((item) => ({
       ...item,
       description: item.description || "",
-    })),
+    }));
+  }
 
-    deliveredBy: {
-      deliveredByName: deliveredBy?.deliveredByName || "",
-      deliveredByMobile: deliveredBy?.deliveredByMobile || "",
-      deliveredDate: deliveredBy?.deliveredDate || null,
-    },
+  if (deliveredBy) {
+    updateData.deliveredBy = {
+      deliveredByName: deliveredBy.deliveredByName ?? existingTicket.deliveredBy?.deliveredByName ?? "",
+      deliveredByMobile: deliveredBy.deliveredByMobile ?? existingTicket.deliveredBy?.deliveredByMobile ?? "",
+      deliveredDate: deliveredBy.deliveredDate ?? existingTicket.deliveredBy?.deliveredDate ?? null,
+    };
+  }
 
-    receivedBy: {
-      receivedByName: receivedBy?.receivedByName || "",
-      receivedByMobile: receivedBy?.receivedByMobile || "",
-      qatarId: receivedBy?.qatarId || "",
-      receivedDate: receivedBy?.receivedDate || null,
-    },
-  });
+  if (receivedBy) {
+    updateData.receivedBy = {
+      receivedByName: receivedBy.receivedByName ?? existingTicket.receivedBy?.receivedByName ?? "",
+      receivedByMobile: receivedBy.receivedByMobile ?? existingTicket.receivedBy?.receivedByMobile ?? "",
+      qatarId: receivedBy.qatarId ?? existingTicket.receivedBy?.qatarId ?? "",
+      receivedDate: receivedBy.receivedDate ?? existingTicket.receivedBy?.receivedDate ?? null,
+    };
+  }
 
+  if (customerId) updateData.customerId = customerId;
+
+  existingTicket.set(updateData);
   await existingTicket.save();
 
   return existingTicket;

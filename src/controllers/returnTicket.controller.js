@@ -1,16 +1,62 @@
 import * as returnTicketService from "../services/returnTicket.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { successResponse, errorResponse } from "../utils/response.js";
-
+import cloudinary from "../config/cloudinary.js";
+import { createError } from "../utils/AppError.js";
+const deleteFile = (path) => {
+  if (path) {
+    fs.unlink(path, (err) => {
+      if (err) console.error(`Failed to delete temporary file: ${path}`, err);
+    });
+  }
+};
 export const AddReturnTicket = asyncHandler(async (req, res) => {
-  const payload = { ...req.body, createdBy: req.user.id };
-  const savedTicket = await returnTicketService.addReturnTicket(payload);
-  return successResponse(
-    res,
-    "Return ticket created successfully and inventory updated",
-    201,
-    savedTicket
-  );
+  try {
+    const attachments = { signedTicket: "", supportingDocs: [] };
+
+    // Handle Signed Ticket
+    if (req.files?.signedTicket?.[0]) {
+      const file = req.files.signedTicket[0];
+      const uploaded = await cloudinary.uploader.upload(file.path, {
+        folder: "return_tickets",
+      });
+      attachments.signedTicket = uploaded.secure_url;
+      deleteFile(file.path);
+    }
+
+    // Handle Supporting Docs
+    if (req.files?.supportingDocs?.length > 0) {
+      for (const file of req.files.supportingDocs) {
+        const uploaded = await cloudinary.uploader.upload(file.path, {
+          folder: "return_tickets",
+        });
+        attachments.supportingDocs.push(uploaded.secure_url);
+        deleteFile(file.path);
+      }
+    }
+
+    const body = { ...req.body };
+
+    // Parse nested objects if they are sent as strings (typical in Multipart/FormData)
+    if (typeof body.items === 'string') body.items = JSON.parse(body.items);
+    if (typeof body.deliveredBy === 'string') body.deliveredBy = JSON.parse(body.deliveredBy);
+    if (typeof body.receivedBy === 'string') body.receivedBy = JSON.parse(body.receivedBy);
+
+    const payload = { ...body, attachments, createdBy: req.user.id };
+    const savedTicket = await returnTicketService.addReturnTicket(payload);
+
+    return successResponse(
+      res,
+      "Return ticket created successfully and inventory updated",
+      201,
+      savedTicket
+    );
+  } catch (error) {
+    // Clean up local files on error
+    if (req.files?.signedTicket) req.files.signedTicket.forEach(f => deleteFile(f.path));
+    if (req.files?.supportingDocs) req.files.supportingDocs.forEach(f => deleteFile(f.path));
+    throw error;
+  }
 });
 
 export const GetReturnTickets = asyncHandler(async (req, res) => {
@@ -95,13 +141,52 @@ export const getOne = asyncHandler(async (req, res) => {
 
 export const update = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const payload = req.body;
-  const updatedReturnTicket = await returnTicketService.updateReturnTicket(
-    id,
-    payload
-  );
-  if (!updatedReturnTicket) throw createError("Return Ticket not found", 404);
-  return successResponse(res, "Return Ticket updated successfully", 200, {
-    content: updatedReturnTicket,
-  });
+
+  try {
+    const ticketToUpdate = await returnTicketService.getReturnTicketById(id);
+    if (!ticketToUpdate) {
+      throw createError("Return Ticket not found", 404);
+    }
+
+    let attachments = ticketToUpdate.attachments || { signedTicket: "", supportingDocs: [] };
+
+    // Handle new Signed Ticket
+    if (req.files?.signedTicket?.[0]) {
+      const file = req.files.signedTicket[0];
+      const uploaded = await cloudinary.uploader.upload(file.path, {
+        folder: "return_tickets",
+      });
+      attachments.signedTicket = uploaded.secure_url;
+      deleteFile(file.path);
+    }
+
+    // Handle new Supporting Docs (Append)
+    if (req.files?.supportingDocs?.length > 0) {
+      for (const file of req.files.supportingDocs) {
+        const uploaded = await cloudinary.uploader.upload(file.path, {
+          folder: "return_tickets",
+        });
+        attachments.supportingDocs.push(uploaded.secure_url);
+        deleteFile(file.path);
+      }
+    }
+
+    const body = { ...req.body };
+
+    // Parse nested objects if they are sent as strings (typical in Multipart/FormData)
+    if (typeof body.items === 'string') body.items = JSON.parse(body.items);
+    if (typeof body.deliveredBy === 'string') body.deliveredBy = JSON.parse(body.deliveredBy);
+    if (typeof body.receivedBy === 'string') body.receivedBy = JSON.parse(body.receivedBy);
+
+    const payload = { ...body, attachments };
+    const updatedReturnTicket = await returnTicketService.updateReturnTicket(id, payload);
+    
+    return successResponse(res, "Return Ticket updated successfully", 200, {
+      content: updatedReturnTicket,
+    });
+  } catch (error) {
+    if (req.files?.signedTicket) req.files.signedTicket.forEach(f => deleteFile(f.path));
+    if (req.files?.supportingDocs) req.files.supportingDocs.forEach(f => deleteFile(f.path));
+    throw error;
+  }
 });

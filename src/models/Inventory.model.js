@@ -4,7 +4,7 @@ const inventorySchema = new mongoose.Schema(
   {
     poNo: {
       type: String,
-      required: true,
+      required: false,
     },
     product: {
       type: mongoose.Schema.Types.ObjectId,
@@ -21,6 +21,15 @@ const inventorySchema = new mongoose.Schema(
       required: true,
     },
     reference: {
+      type: String,
+    },
+    remarks: {
+      type: String,
+    },
+    deliveryNote: {
+      type: String,
+    },
+    productImage: {
       type: String,
     },
     orderedQty: {
@@ -56,6 +65,7 @@ const inventorySchema = new mongoose.Schema(
           required: true,
         },
         customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
+        vendorId: { type: mongoose.Schema.Types.ObjectId, ref: "Vendor" },
         stock: {
           type: Number,
           required: true,
@@ -73,15 +83,17 @@ const inventorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-inventorySchema.index({ poNo: 1, product: 1 }, { unique: true });
+// Remove the unique index to allow multiple null/empty poNo for different products
+// But we will handle "upsert" manually in service.
+// inventorySchema.index({ poNo: 1, product: 1 }, { unique: true });
 
 inventorySchema.pre("save", function (next) {
   if (this.availableQty === 0) {
     this.status = "OUT_OF_STOCK";
-  } else if (this.availableQty <= 100) {
-    this.status = "LOW_STOCK";
   } else {
-    this.status = "IN_STOCK";
+    // Note: LOW_STOCK is now handled dynamically in service or UI
+    // based on product.reorderLevel
+    if (this.status === "OUT_OF_STOCK") this.status = "IN_STOCK";
   }
   next();
 });

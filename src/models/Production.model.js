@@ -21,10 +21,16 @@ const ProductionSchema = new mongoose.Schema(
       type: Date, 
       default: Date.now 
     },
-    shift: { 
-      type: String, 
-      enum: ["Day", "Night"], 
-      required: true 
+    rawMaterials: [
+      {
+        material: { type: mongoose.Schema.Types.ObjectId, ref: "RawMaterial" },
+        quantity: { type: Number, required: true }
+      }
+    ],
+    status: {
+      type: String,
+      enum: ["pending", "approved"],
+      default: "pending"
     },
     image: { 
       type: String // File path to the uploaded image

@@ -12,6 +12,7 @@ import {
 } from "../controllers/returnTicket.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { allowRoles } from "../middleware/role.middleware.js";
+import { uploadDisk } from "../config/upload.js";
 
 const router = express.Router();
 router.get(
@@ -42,6 +43,10 @@ router.post(
   "/",
   authMiddleware,
   allowRoles("return_ticket:create"),
+  uploadDisk.fields([
+    { name: "signedTicket", maxCount: 1 },
+    { name: "supportingDocs", maxCount: 10 },
+  ]),
   AddReturnTicket
 );
 router.get(
@@ -58,5 +63,14 @@ router.delete(
   remove
 );
 router.get("/:id", authMiddleware, allowRoles("return_ticket:view"), getOne);
-router.put("/:id", authMiddleware, allowRoles("return_ticket:update"), update);
+router.put(
+  "/:id", 
+  authMiddleware, 
+  allowRoles("return_ticket:update"), 
+  uploadDisk.fields([
+    { name: "signedTicket", maxCount: 1 },
+    { name: "supportingDocs", maxCount: 10 },
+  ]),
+  update
+);
 export default router;

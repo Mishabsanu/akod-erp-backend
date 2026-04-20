@@ -16,6 +16,23 @@ export const getWorker = asyncHandler(async (req, res) => {
 
 export const createWorker = asyncHandler(async (req, res) => {
   const data = { ...req.body, createdBy: req.user.id };
+
+  // Parse JSON strings from multipart/form-data
+  if (typeof data.skills === 'string') {
+    try {
+      data.skills = JSON.parse(data.skills);
+    } catch (e) {
+      data.skills = [];
+    }
+  }
+  if (typeof data.utilities === 'string') {
+    try {
+      data.utilities = JSON.parse(data.utilities);
+    } catch (e) {
+      data.utilities = [];
+    }
+  }
+  
   
   // Handle named document fields from multer.fields
   if (req.files) {
@@ -36,7 +53,25 @@ export const createWorker = asyncHandler(async (req, res) => {
 });
 
 export const updateWorker = asyncHandler(async (req, res) => {
-  const updated = await workerService.updateWorker(req.params.id, req.body);
+  const data = { ...req.body };
+
+  // Parse JSON strings from multipart/form-data
+  if (typeof data.skills === 'string') {
+    try {
+      data.skills = JSON.parse(data.skills);
+    } catch (e) {
+       // if it fails, keep it as is or handle accordingly
+    }
+  }
+  if (typeof data.utilities === 'string') {
+    try {
+      data.utilities = JSON.parse(data.utilities);
+    } catch (e) {
+       // if it fails, keep it as is or handle accordingly
+    }
+  }
+
+  const updated = await workerService.updateWorker(req.params.id, data);
   return successResponse(res, "Worker updated successfully", 200, updated);
 });
 

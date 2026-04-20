@@ -396,7 +396,7 @@ export const update = async (id, data, user) => {
 export const remove = async (id, user) => {
   const sale = await Sale.findById(id);
   if (!sale) return null;
-  if (user.role !== "admin" && sale.user.toString() !== user._id.toString())
+  if (user.role !== "admin" && sale.user.toString() !== user.id.toString())
     return null;
   return sale.deleteOne();
 };
@@ -443,7 +443,7 @@ export const getNextTicketNo = async () => {
     }
   }
 
-  return `TKT-${String(nextNumber).padStart(6, "0")}`;
+  return `TKT-${String(nextNumber).padStart(3, "0")}`;
 };
 
 const processStream = async (

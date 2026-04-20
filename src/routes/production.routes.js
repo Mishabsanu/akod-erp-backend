@@ -10,6 +10,7 @@ router.get("/", authMiddleware, allowRoles("production:view"), productionControl
 router.get("/:id", authMiddleware, allowRoles("production:view"), productionController.getOne);
 router.post("/", authMiddleware, allowRoles("production:create"), upload.single("image"), productionController.create);
 router.put("/:id", authMiddleware, allowRoles("production:update"), upload.single("image"), productionController.update);
+router.patch("/:id/approve", authMiddleware, allowRoles("production:update"), productionController.approve);
 router.delete("/:id", authMiddleware, allowRoles("production:delete"), productionController.remove);
 
 export default router;

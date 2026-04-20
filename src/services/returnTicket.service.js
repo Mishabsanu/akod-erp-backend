@@ -77,6 +77,7 @@ export const getReturnTickets = async (queryParams) => {
 
   const [tickets, totalCount] = await Promise.all([
     ReturnTicketModel.find(query)
+      .populate("createdBy", "name")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(pageSize),
@@ -311,11 +312,11 @@ export const deleteReturnTickets = async (id) => {
 };
 
 export const getReturnTicketById = async (id) => {
-  return await ReturnTicketModel.findById(id).select("-__v").lean();
+  return await ReturnTicketModel.findById(id).populate("createdBy", "name").select("-__v").lean();
 };
 
 export const updateReturnTicket = async (id, ticketData) => {
-  const { items, ticketNo, customerId, ...rest } = ticketData;
+  const { items, deliveredBy, receivedBy, customerId, ...rest } = ticketData;
 
   /* ---------------- FETCH EXISTING RETURN TICKET ---------------- */
   const existingTicket = await ReturnTicketModel.findById(id);
@@ -323,78 +324,89 @@ export const updateReturnTicket = async (id, ticketData) => {
     throw createError("Return Ticket not found", 404);
   }
 
-  /* ---------------- ROLLBACK OLD INVENTORY ---------------- */
-  for (const oldItem of existingTicket.items) {
-    const inventoryItem = await Inventory.findOne({
-      itemCode: oldItem.itemCode,
-    });
+  // Determine if inventory needs reconciliation
+  const shouldReconcileInventory = items && Array.isArray(items);
 
-    if (!inventoryItem) continue;
+  if (shouldReconcileInventory) {
+    /* ---------------- ROLLBACK OLD INVENTORY ---------------- */
+    for (const oldItem of existingTicket.items) {
+      const inventoryItem = await Inventory.findOne({
+        itemCode: oldItem.itemCode,
+      });
 
-    inventoryItem.availableQty -= oldItem.quantity;
+      if (!inventoryItem) continue;
 
-    if (inventoryItem.availableQty < 0) {
-      throw createError(
-        `Inventory became negative while reverting item ${oldItem.itemCode}`,
-        400
-      );
+      inventoryItem.availableQty -= oldItem.quantity;
+
+      // We allow negative temporarily during reconciliation if needed, 
+      // but usually the items being returned added to stock.
+      // Reverting a return means subtracting from stock.
+
+      inventoryItem.history.push({
+        type: "RETURN_REVERT",
+        stock: oldItem.quantity,
+        customerId: customerId || existingTicket.customerId,
+        note: `Reverted return from ${existingTicket.ticketNo} (Update)`,
+        date: new Date(),
+        ticketNo: existingTicket.ticketNo,
+      });
+
+      await inventoryItem.save();
     }
 
-    inventoryItem.history.push({
-      type: "RETURN_REVERT",
-      stock: oldItem.quantity,
-      customerId: customerId,
-      note: `Reverted return from ${existingTicket.ticketNo}`,
-      date: new Date(),
-      ticketNo: existingTicket.ticketNo,
-    });
-
-    await inventoryItem.save();
-  }
-
-  /* ---------------- VALIDATE NEW INVENTORY ---------------- */
-  for (const item of items) {
-    const inventoryItem = await Inventory.findOne({
-      itemCode: item.itemCode,
-    });
-
-    if (!inventoryItem) {
-      throw createError(
-        `Item with code ${item.itemCode} not found in inventory`,
-        400
-      );
+    /* ---------------- VALIDATE NEW INVENTORY ---------------- */
+    for (const item of items) {
+      const inventoryItem = await Inventory.findOne({ itemCode: item.itemCode });
+      if (!inventoryItem) {
+        throw createError(`Item with code ${item.itemCode} not found in inventory`, 400);
+      }
     }
-  }
 
-  /* ---------------- APPLY NEW INVENTORY ---------------- */
-  for (const item of items) {
-    const inventoryItem = await Inventory.findOne({
-      itemCode: item.itemCode,
-    });
-
-    if (!inventoryItem) continue;
-
-    inventoryItem.availableQty += item.quantity;
-
-    inventoryItem.history.push({
-      type: "RETURN",
-      stock: item.quantity,
-      customerId: customerId,
-      note: `Updated return via ${ticketNo}`,
-      date: new Date(),
-      ticketNo,
-    });
-
-    await inventoryItem.save();
+    /* ---------------- APPLY NEW INVENTORY ---------------- */
+    for (const item of items) {
+      const inventoryItem = await Inventory.findOne({ itemCode: item.itemCode });
+      if (inventoryItem) {
+        inventoryItem.availableQty += item.quantity;
+        inventoryItem.history.push({
+          type: "RETURN",
+          stock: item.quantity,
+          customerId: customerId || existingTicket.customerId,
+          note: `Updated return via ${existingTicket.ticketNo}`,
+          date: new Date(),
+          ticketNo: existingTicket.ticketNo,
+        });
+        await inventoryItem.save();
+      }
+    }
   }
 
   /* ---------------- UPDATE RETURN TICKET ---------------- */
-  existingTicket.set({
-    ...rest,
-    items,
-    ticketNo,
-  });
+  const updateData = { ...rest };
 
+  if (shouldReconcileInventory) {
+    updateData.items = items;
+  }
+
+  if (deliveredBy) {
+    updateData.deliveredBy = {
+      deliveredByName: deliveredBy.deliveredByName ?? existingTicket.deliveredBy?.deliveredByName ?? "",
+      deliveredByMobile: deliveredBy.deliveredByMobile ?? existingTicket.deliveredBy?.deliveredByMobile ?? "",
+      deliveredDate: deliveredBy.deliveredDate ?? existingTicket.deliveredBy?.deliveredDate ?? null,
+    };
+  }
+
+  if (receivedBy) {
+    updateData.receivedBy = {
+      receivedByName: receivedBy.receivedByName ?? existingTicket.receivedBy?.receivedByName ?? "",
+      receivedByMobile: receivedBy.receivedByMobile ?? existingTicket.receivedBy?.receivedByMobile ?? "",
+      qatarId: receivedBy.qatarId ?? existingTicket.receivedBy?.qatarId ?? "",
+      receivedDate: receivedBy.receivedDate ?? existingTicket.receivedBy?.receivedDate ?? null,
+    };
+  }
+
+  if (customerId) updateData.customerId = customerId;
+
+  existingTicket.set(updateData);
   await existingTicket.save();
 
   return existingTicket;

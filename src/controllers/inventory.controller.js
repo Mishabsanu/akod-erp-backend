@@ -11,6 +11,7 @@ export const getAll = asyncHandler(async (req, res) => {
     status,
     minStock,
     maxStock,
+    onlyLowStock,
   } = req.query;
 
   const result = await inventoryService.getAllInventories({
@@ -20,6 +21,7 @@ export const getAll = asyncHandler(async (req, res) => {
     status,
     minStock: minStock !== undefined ? Number(minStock) : undefined,
     maxStock: maxStock !== undefined ? Number(maxStock) : undefined,
+    onlyLowStock,
   });
 
   return successResponse(
@@ -31,7 +33,28 @@ export const getAll = asyncHandler(async (req, res) => {
 });
 
 export const create = asyncHandler(async (req, res) => {
-  const payload = { ...req.body, createdBy: req.user.id };
+  let body = req.body;
+  
+  // If items is a string (due to FormData), parse it
+  if (typeof body.items === "string") {
+    try {
+      body.items = JSON.parse(body.items);
+    } catch (e) {
+      throw createError("Invalid items format", 400);
+    }
+  }
+
+  // Handle uploaded files
+  if (req.files) {
+    if (req.files.deliveryNote) {
+      body.deliveryNote = `/uploads/${req.files.deliveryNote[0].filename}`;
+    }
+    if (req.files.productImage) {
+      body.productImage = `/uploads/${req.files.productImage[0].filename}`;
+    }
+  }
+
+  const payload = { ...body, createdBy: req.user.id };
   const newInventory = await inventoryService.createInventory(payload);
   return successResponse(res, "Inventory created successfully", 201, {
     inventory: newInventory,
@@ -47,8 +70,19 @@ export const getOne = asyncHandler(async (req, res) => {
 
 export const update = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const payload = req.body;
-  const updatedInventory = await inventoryService.updateInventory(id, payload);
+  const body = { ...req.body };
+
+  // Handle uploaded files during update
+  if (req.files) {
+    if (req.files.deliveryNote) {
+      body.deliveryNote = `/uploads/${req.files.deliveryNote[0].filename}`;
+    }
+    if (req.files.productImage) {
+      body.productImage = `/uploads/${req.files.productImage[0].filename}`;
+    }
+  }
+
+  const updatedInventory = await inventoryService.updateInventory(id, body);
   if (!updatedInventory) throw createError("Inventory not found", 404);
   return successResponse(res, "Inventory updated successfully", 200, {
     content: updatedInventory,

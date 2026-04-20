@@ -58,6 +58,29 @@ export const deleteUtilityItem = async (req, res, next) => {
   }
 };
 
+export const createBulkUtilityItems = async (req, res, next) => {
+  try {
+    const { baseItem, variants } = req.body;
+    const groupId = `GRP-${Date.now()}`;
+
+    const itemsToCreate = variants.map((variant) => ({
+      ...baseItem,
+      ...variant,
+      groupId,
+      isVariant: true,
+      createdBy: req.user?._id,
+    }));
+
+    const items = await UtilityItem.insertMany(itemsToCreate);
+    res.status(201).json({ success: true, data: items });
+  } catch (error) {
+    if (error.code === 11000) {
+      return next(createError("One or more SKUs already exist", 400));
+    }
+    next(error);
+  }
+};
+
 export const getUtilityDropdown = async (req, res, next) => {
   try {
     const items = await UtilityItem.find({ isActive: true, quantity: { $gt: 0 } })

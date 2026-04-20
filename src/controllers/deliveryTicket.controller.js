@@ -6,7 +6,7 @@ import fs from "fs";
 import { createError } from "../utils/AppError.js";
 
 const deleteFile = (path) => {
-  if (path) {
+  if (path && fs.existsSync(path)) {
     fs.unlink(path, (err) => {
       if (err) console.error(`Failed to delete temporary file: ${path}`, err);
     });
@@ -108,7 +108,15 @@ export const update = asyncHandler(async (req, res) => {
       }
     }
 
-    const payload = { ...req.body, attachments };
+    const body = { ...req.body };
+
+    // Parse nested objects if they are sent as strings (typical in Multipart/FormData)
+    if (typeof body.items === 'string') body.items = JSON.parse(body.items);
+    if (typeof body.deliveredBy === 'string') body.deliveredBy = JSON.parse(body.deliveredBy);
+    if (typeof body.receivedBy === 'string') body.receivedBy = JSON.parse(body.receivedBy);
+
+    const payload = { ...body, attachments };
+
     const updatedDeliveryTicket = await deliveryTicketService.updateDeliveryTicket(id, payload);
     
     return successResponse(res, "Delivery Ticket updated successfully", 200, {

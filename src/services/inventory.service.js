@@ -12,6 +12,7 @@ export const getAllInventories = async ({
   itemCode,
   minStock,
   maxStock,
+  onlyLowStock,
 }) => {
   const query = {};
 
@@ -44,7 +45,7 @@ export const getAllInventories = async ({
 
   const [inventories, totalCount] = await Promise.all([
     Inventory.find(query)
-      .populate("product", "name itemCode")
+      .populate("product", "name itemCode reorderLevel")
       .populate("vendor", "name")
       .populate("createdBy", "name")
       .select("-__v")
@@ -55,65 +56,104 @@ export const getAllInventories = async ({
   ]);
 
   const totalPages = Math.ceil(totalCount / limit);
+
+  // Map to add 'isLowStock' flag dynamically and calculate totalSold
+  const contentWithFlags = inventories.map(inv => {
+    const item = inv.toObject();
+    const reorderLevel = inv.product?.reorderLevel || 0;
+    const isLow = inv.availableQty <= reorderLevel && inv.availableQty > 0;
+    return {
+      ...item,
+      totalSold: (inv.orderedQty || 0) - (inv.availableQty || 0),
+      isLowStock: isLow,
+      status: inv.availableQty === 0 ? "OUT_OF_STOCK" : (isLow ? "LOW_STOCK" : "IN_STOCK")
+    };
+  });
+
+  // Filter if onlyLowStock is requested
+  const finalContent = onlyLowStock === "true" 
+    ? contentWithFlags.filter(item => item.isLowStock || item.status === "OUT_OF_STOCK")
+    : contentWithFlags;
+
   return {
-    content: inventories,
-    totalCount,
-    totalPages,
+    content: finalContent,
+    totalCount: onlyLowStock === "true" ? finalContent.length : totalCount,
+    totalPages: onlyLowStock === "true" ? 1 : totalPages,
     currentPage: page,
     limit,
   };
 };
 
 export const createInventory = async (data) => {
-  const { poNo, items, vendor, reference } = data;
+  const { poNo, items, vendor, reference, remarks, deliveryNote, productImage } = data;
 
-  if (!poNo || !items?.length) {
-    throw createError("PO Number and items are required", 400);
+  if (!items?.length) {
+    throw createError("Items are required", 400);
   }
 
   const createdInventories = [];
 
   for (const item of items) {
-    const { productId, itemCode, quantity } = item;
+    const { productId, itemCode, quantity, reorderLevel } = item;
 
     if (!productId || !itemCode || !quantity) {
       throw createError("Invalid item payload", 400);
     }
 
-    // 🔒 Prevent duplicate inventory per PO + product
-    const exists = await Inventory.findOne({
-      poNo,
-      product: productId,
-    });
-
-    if (exists) {
-      throw createError(
-        `Inventory already exists for PO ${poNo} and item ${itemCode}`,
-        400
-      );
+    // 🔥 Update product reorder level if provided
+    if (reorderLevel !== undefined) {
+      await mongoose.model("Product").findByIdAndUpdate(productId, { reorderLevel });
     }
 
-    const inventory = await Inventory.create({
-      poNo,
+    // 🔒 Upsert logic: Find existing inventory for same PO + Product
+    // If poNo is missing, it tries to find one with no poNo
+    const existing = await Inventory.findOne({
+      poNo: poNo || { $in: [null, ""] },
       product: productId,
-      vendor,
-      itemCode,
-      reference,
-      orderedQty: quantity,
-      availableQty: quantity,
-      createdBy: data.createdBy,
-      history: [
-        {
-          type: "ADD_STOCK",
-          stock: quantity,
-          note: `Inventory created (manual PO: ${poNo})`,
-        },
-      ],
     });
 
-    const obj = inventory.toObject();
-    delete obj.__v;
-    createdInventories.push(obj);
+    if (existing) {
+      existing.orderedQty += Number(quantity);
+      existing.availableQty += Number(quantity);
+      existing.vendor = vendor || existing.vendor; // Update to latest vendor
+      if (reference) existing.reference = reference;
+      if (remarks) existing.remarks = remarks;
+      if (deliveryNote) existing.deliveryNote = deliveryNote;
+      if (productImage) existing.productImage = productImage;
+
+      existing.history.push({
+        type: "ADD_STOCK",
+        stock: quantity,
+        vendorId: vendor,
+        note: `Stock added to existing record (PO: ${poNo || 'N/A'})`,
+      });
+
+      await existing.save();
+      createdInventories.push(existing.toObject());
+    } else {
+      const inventory = await Inventory.create({
+        poNo,
+        product: productId,
+        vendor,
+        itemCode,
+        reference,
+        remarks,
+        deliveryNote,
+        productImage,
+        orderedQty: quantity,
+        availableQty: quantity,
+        createdBy: data.createdBy,
+        history: [
+          {
+            type: "ADD_STOCK",
+            stock: quantity,
+            vendorId: vendor,
+            note: `Inventory created (PO: ${poNo || 'N/A'})`,
+          },
+        ],
+      });
+      createdInventories.push(inventory.toObject());
+    }
   }
 
   return createdInventories;

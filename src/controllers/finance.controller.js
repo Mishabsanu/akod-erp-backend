@@ -13,6 +13,11 @@ export const getExpenseById = asyncHandler(async (req, res) => {
   return successResponse(res, "Expense fetched successfully", 200, expense);
 });
 
+export const getNextExpenseId = asyncHandler(async (req, res) => {
+  const nextId = await financeService.getLatestExpenseNo();
+  return successResponse(res, "Next expense ID fetched", 200, { nextId });
+});
+
 export const addExpense = asyncHandler(async (req, res) => {
   const expense = await financeService.createExpense(req.body, req.user);
   return successResponse(res, "Expense created successfully", 201, expense);
@@ -68,6 +73,11 @@ export const getPayments = asyncHandler(async (req, res) => {
 export const getPaymentById = asyncHandler(async (req, res) => {
   const payment = await financeService.getPaymentById(req.params.id);
   return successResponse(res, "Payment fetched successfully", 200, payment);
+});
+
+export const getNextPaymentId = asyncHandler(async (req, res) => {
+  const nextId = await financeService.getLatestPaymentNo();
+  return successResponse(res, "Next payment ID fetched", 200, { nextId });
 });
 
 export const addPayment = asyncHandler(async (req, res) => {

@@ -9,6 +9,8 @@ import {
 import { validate } from "../middleware/validate.middleware.js";
 import upload from "../middleware/upload.js";
 
+import { uploadDisk, uploadMemory } from "../config/upload.js";
+
 const router = express.Router();
 
 router.get(
@@ -30,6 +32,13 @@ router.get(
   productController.getOne
 );
 
+router.get(
+  "/:id/history",
+  authMiddleware,
+  allowRoles("product:view"),
+  productController.getHistory
+);
+
 router.post(
   "/",
   authMiddleware,
@@ -37,6 +46,29 @@ router.post(
   createProductValidator,
   validate,
   productController.create
+);
+
+router.post(
+  "/bulk-import",
+  authMiddleware,
+  allowRoles("product:create"),
+  uploadMemory.single("file"),
+  productController.bulkImport
+);
+
+router.post(
+  "/import/google-sheet",
+  authMiddleware,
+  allowRoles("product:create"),
+  productController.importProductsFromGoogleSheet
+);
+
+router.post(
+  "/import/csv",
+  authMiddleware,
+  allowRoles("product:create"),
+  uploadMemory.single("file"),
+  productController.importProductsFromCsv
 );
 
 router.put(

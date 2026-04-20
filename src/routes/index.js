@@ -11,7 +11,6 @@ import deliveryTicketRoutes from "./deliveryTicket.routes.js";
 import returnTicketRoutes from "./returnTicket.routes.js";
 import attendanceRoutes from "./attendance.routes.js";
 import salesRoutes from "./sales.routes.js";
-import quoteRoutes from "./quote.routes.js";
 import runningOrderRoutes from "./runningOrder.routes.js";
 import financeRoutes from "./finance.routes.js";
 import payrollRoutes from "./payroll.routes.js";
@@ -22,6 +21,7 @@ import productionRoutes from "./production.routes.js";
 import leaveRoutes from "./leave.routes.js";
 import workerUtilityRoutes from "./workerUtility.routes.js";
 import utilityItemRoutes from "./utilityItem.routes.js";
+import rawMaterialRoutes from "./rawMaterial.routes.js";
 
 const router = express.Router();
 
@@ -37,7 +37,6 @@ router.use("/delivery-tickets", deliveryTicketRoutes);
 router.use("/return-tickets", returnTicketRoutes);
 router.use("/attendance", attendanceRoutes);
 router.use("/sales", salesRoutes);
-router.use("/quote-tracks", quoteRoutes);
 router.use("/running-orders", runningOrderRoutes);
 router.use("/finance", financeRoutes);
 router.use("/payroll", payrollRoutes);
@@ -48,5 +47,6 @@ router.use("/production", productionRoutes);
 router.use("/leaves", leaveRoutes);
 router.use("/worker-utilities", workerUtilityRoutes);
 router.use("/utility-items", utilityItemRoutes);
+router.use("/raw-materials", rawMaterialRoutes);
 
 export default router;

@@ -14,11 +14,16 @@ const OrderSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    invoice_number: {
+    order_number: {
       type: String,
       required: true,
       trim: true,
       unique: true,
+    },
+    invoice_number: {
+      type: String,
+      trim: true,
+      required: false,
     },
     po_number: {
       type: String,

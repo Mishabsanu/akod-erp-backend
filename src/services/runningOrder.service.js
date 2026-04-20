@@ -15,6 +15,7 @@ export const getAllOrders = async ({
     query.$or = [
       { company_name: { $regex: search, $options: "i" } },
       { client_name: { $regex: search, $options: "i" } },
+      { order_number: { $regex: search, $options: "i" } },
       { invoice_number: { $regex: search, $options: "i" } },
     ];
   }
@@ -68,7 +69,7 @@ export const deleteOrderById = async (id) => {
 };
 
 export const getOrdersDropdown = async () => {
-  return Order.find({}, { _id: 1, invoice_number: 1, po_number: 1, client_name: 1, company_name: 1, items: 1, transaction_type: 1 }).sort({ createdAt: -1 });
+  return Order.find({}, { _id: 1, order_number: 1, invoice_number: 1, po_number: 1, client_name: 1, company_name: 1, items: 1, transaction_type: 1 }).sort({ createdAt: -1 });
 };
 
 export const getFulfillmentStats = async (id) => {
@@ -117,4 +118,16 @@ export const getFulfillmentStats = async (id) => {
       returns: returns.map(r => ({ _id: r._id, ticketNo: r.ticketNo, date: r.returnDate, qty: r.items.reduce((a, b) => a + b.returnQty, 0) }))
     }
   };
+};
+
+export const getLatestRunningOrderNo = async () => {
+    const latest = await Order.findOne().sort({ order_number: -1 }).lean();
+    let nextNo = "RO-00001";
+    if (latest?.order_number) {
+        const lastNumber = parseInt(latest.order_number.replace("RO-", ""), 10);
+        if (!isNaN(lastNumber)) {
+            nextNo = `RO-${String(lastNumber + 1).padStart(5, "0")}`;
+        }
+    }
+    return nextNo;
 };

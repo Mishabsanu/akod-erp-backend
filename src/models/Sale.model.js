@@ -41,7 +41,7 @@ const salesSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     position: { type: String, required: true, trim: true },
     location: { type: String, required: true, trim: true },
-    region: { type: String, required: true, trim: true },
+    region: { type: String, trim: true },
     date: { type: String, required: true },
     nextFollowUpDate: { type: String },
     remarks: { type: String, trim: true },

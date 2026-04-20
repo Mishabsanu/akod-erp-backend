@@ -42,11 +42,6 @@ export const createSaleValidator = [
     .isString()
     .withMessage("Location must be a string"),
 
-  body("region")
-    .notEmpty()
-    .withMessage("Region is required")
-    .isString()
-    .withMessage("Region must be a string"),
 
   body("date")
     .notEmpty()
@@ -100,7 +95,6 @@ export const updateSaleValidator = [
     .isString()
     .withMessage("Location must be a string"),
 
-  body("region").optional().isString().withMessage("Region must be a string"),
 
   body("date").optional().isString().withMessage("Date must be a string"),
 

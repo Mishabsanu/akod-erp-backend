@@ -24,7 +24,8 @@ export const createRunningOrderValidator = [
     .withMessage("Ordered date is required")
     .isISO8601()
     .toDate(),
-  body("invoice_number").notEmpty().withMessage("Invoice number is required"),
+  body("order_number").notEmpty().withMessage("Order number is required"),
+  body("invoice_number").optional().isString(),
   body("po_number").optional().isString(),
   body("invoice_amount").optional().isNumeric(),
   body("advance_payment").optional().isNumeric(),
@@ -43,6 +44,7 @@ export const updateRunningOrderValidator = [
   body("company_name").optional().isString(),
   body("client_name").optional().isString(),
   body("ordered_date").optional().isISO8601().toDate(),
+  body("order_number").optional().isString(),
   body("invoice_number").optional().isString(),
   body("po_number").optional().isString(),
   body("invoice_amount").optional().isNumeric(),

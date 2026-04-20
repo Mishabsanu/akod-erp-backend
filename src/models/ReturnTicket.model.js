@@ -48,7 +48,7 @@ const ReturnTicketSchema = new mongoose.Schema(
     subject: { type: String, required: true },
     projectLocation: { type: String, required: true },
     referenceNo: { type: String },
-    reason: { type: String, required: true },
+    reason: { type: String },
     poNo: { type: String },
     invoiceNo: { type: String },
     vehicleNo: { type: String },
@@ -56,6 +56,10 @@ const ReturnTicketSchema = new mongoose.Schema(
     deliveredBy: { type: DeliveredBySchema, required: true },
     receivedBy: { type: ReceivedBySchema, required: true },
     runningOrderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
+    attachments: {
+      signedTicket: { type: String, default: "" },
+      supportingDocs: { type: [String], default: [] }
+    },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },
   { timestamps: true }

@@ -7,6 +7,7 @@ import {
   updateInventory,
 } from "../validators/inventory.validator.js";
 import { validate } from "../middleware/validate.middleware.js";
+import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
@@ -39,6 +40,10 @@ router.post(
   "/",
   authMiddleware,
   allowRoles("inventory:create"),
+  upload.fields([
+    { name: "deliveryNote", maxCount: 1 },
+    { name: "productImage", maxCount: 1 },
+  ]),
   createInventory, // Added validator
   validate,
   inventoryController.create
@@ -47,6 +52,10 @@ router.put(
   "/:id",
   authMiddleware,
   allowRoles("inventory:update"),
+  upload.fields([
+    { name: "deliveryNote", maxCount: 1 },
+    { name: "productImage", maxCount: 1 },
+  ]),
   updateInventory, // Added validator
   validate,
   inventoryController.update
