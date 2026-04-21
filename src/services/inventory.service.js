@@ -105,10 +105,9 @@ export const createInventory = async (data) => {
       await mongoose.model("Product").findByIdAndUpdate(productId, { reorderLevel });
     }
 
-    // 🔒 Upsert logic: Find existing inventory for same PO + Product
-    // If poNo is missing, it tries to find one with no poNo
+    // 🔒 Upsert logic: Find existing inventory for the same Product
+    // This allows consolidation of stock for the same product across different entries
     const existing = await Inventory.findOne({
-      poNo: poNo || { $in: [null, ""] },
       product: productId,
     });
 
@@ -165,20 +164,18 @@ export const updateInventory = async (id, data) => {
 
   const { orderedQty, note = "Inventory updated" } = data;
 
-  // 🔒 Ensure PO + Product uniqueness if changed
-  if (data.poNo || data.product) {
-    const poNo = data.poNo || inventory.poNo;
+  // 🔒 Ensure Product uniqueness if changed
+  if (data.product) {
     const product = data.product || inventory.product;
 
     const exists = await Inventory.findOne({
-      poNo,
       product,
       _id: { $ne: id },
     });
 
     if (exists) {
       throw createError(
-        "Inventory with this PO Number and Product already exists",
+        "Inventory record for this Product already exists. Please update the existing record instead.",
         400
       );
     }
