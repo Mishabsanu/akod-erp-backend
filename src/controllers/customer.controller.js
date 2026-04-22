@@ -47,3 +47,8 @@ export const remove = asyncHandler(async (req, res) => {
   if (!deleted) throw createError("Customer not found", 404);
   return successResponse(res, "Customer deleted successfully", 200, {});
 });
+
+export const getDropdown = asyncHandler(async (req, res) => {
+  const result = await customerService.getDropdown();
+  return successResponse(res, "Customers fetched successfully", 200, result);
+});

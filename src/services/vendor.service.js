@@ -11,7 +11,6 @@ export const getAllVendors = async ({
 
   if (search) {
     query.$or = [
-      { name: { $regex: search, $options: "i" } },
       { email: { $regex: search, $options: "i" } },
       { mobile: { $regex: search, $options: "i" } },
       { companyName: { $regex: search, $options: "i" } },
@@ -44,7 +43,7 @@ export const getAllVendors = async ({
 };
 
 export const createVendor = async (data) => {
-  const { name, email } = data;
+  const { email } = data;
 
   if (email) {
     const normalizedEmail = email.trim().toLowerCase();
@@ -56,7 +55,6 @@ export const createVendor = async (data) => {
 
   const vendor = await Vendor.create({
     ...data,
-    name: name.trim(),
     email: email ? email.trim().toLowerCase() : null,
   });
 
@@ -109,7 +107,6 @@ export const getDropdown = async () => {
   return Vendor.find(
     {},
     {
-      name: 1,
       mobile: 1,
       company: 1,
     }

@@ -17,6 +17,12 @@ router.get(
   customerController.getAll
 );
 router.get(
+  "/dropdown",
+  authMiddleware,
+  allowRoles("customer:view"),
+  customerController.getDropdown
+);
+router.get(
   "/:id",
   authMiddleware,
   allowRoles("customer:view"),

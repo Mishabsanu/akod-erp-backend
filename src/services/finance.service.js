@@ -3,12 +3,25 @@ import { Expense } from "../models/Expense.model.js";
 import { Invoice } from "../models/Invoice.model.js";
 import { Payment } from "../models/Payment.model.js";
 import { Ledger } from "../models/Ledger.model.js";
+import { Vendor } from "../models/Vendor.model.js";
+import { Customer } from "../models/Customer.model.js";
+
+const resolveEntityName = async (id, type) => {
+  if (!id) return null;
+  try {
+    const Model = type === 'Customer' ? Customer : Vendor;
+    const entity = await Model.findById(id).lean();
+    return entity?.company || null;
+  } catch (e) {
+    return null;
+  }
+};
 
 
 
 // --- Expenses ---
 export const getExpenseById = async (id) => {
-  return await Expense.findById(id).populate("createdBy", "name")
+  return await Expense.findById(id).populate("createdBy", "name").populate("vendorId", "company")
 };
 
 export const getAllExpenses = async (user, { search, companyName,category, status, isApproved, startDate, endDate, page = 1, limit = 10 }) => {
@@ -33,6 +46,7 @@ export const getAllExpenses = async (user, { search, companyName,category, statu
 
   const expenses = await Expense.find(query)
     .populate("createdBy", "name")
+    .populate("vendorId", "company")
     .sort({ date: -1 })
     .skip((page - 1) * limit)
     .limit(limit);
@@ -59,15 +73,28 @@ export const getLatestExpenseNo = async () => {
     return nextNo;
 };
 
-export const createExpense = async (data, user) => {
+export const createExpense = async (data, user, files) => {
   const expenseId = await getLatestExpenseNo();
+  
+  const attachments = [];
+  if (files) {
+    if (files.bill) attachments.push({ name: files.bill[0].originalname, url: `/uploads/${files.bill[0].filename}`, type: 'bill' });
+    if (files.receipt) attachments.push({ name: files.receipt[0].originalname, url: `/uploads/${files.receipt[0].filename}`, type: 'receipt' });
+    if (files.proof) attachments.push({ name: files.proof[0].originalname, url: `/uploads/${files.proof[0].filename}`, type: 'proof' });
+  }
+
   const expense = await Expense.create({ 
     ...data, 
     expenseId,
     createdBy: user.id, 
     isApproved: false,
     paidTotal: 0,
-    balance: data.totalAmount || data.amount || 0 
+    balance: data.totalAmount || data.amount || 0,
+    attachments,
+    accountId: data.accountId,
+    handledById: data.handledById,
+    contactPerson: data.contactPerson,
+    paidBy: data.paidBy
   });
   return expense;
 };
@@ -81,24 +108,59 @@ export const approveExpense = async (id, user) => {
   expense.approvedBy = user.id;
   await expense.save();
 
+  const companyName = expense.companyName || await resolveEntityName(expense.vendorId, 'Vendor');
+
   // Create Ledger entry ONLY on approval
   await Ledger.create({
     date: expense.date,
-    description: `Expense [${expense.expenseId}]: ${expense.category} - ${expense.description || ''} (Mode: ${expense.modeOfPayment})`,
-    companyName: expense.companyName,
+    description: `${expense.category}: ${expense.description || 'General Expenditure'}`,
+    companyName: companyName,
     debit: expense.totalAmount,
     credit: 0,
     balance: expense.totalAmount,
     referenceId: expense._id,
+    referenceNo: expense.expenseId,
     referenceType: 'Expense',
+    modeOfPayment: expense.modeOfPayment,
+    handledBy: expense.paidBy || expense.contactPerson,
+    accountId: expense.accountId, // Link ledger to specific account
     createdBy: user.id
   });
 
   return expense;
 };
 
-export const updateExpense = async (id, data) => {
-  const expense = await Expense.findByIdAndUpdate(id, data, { new: true });
+export const updateExpense = async (id, data, files) => {
+  const attachments = [];
+  if (files) {
+    if (files.bill) attachments.push({ name: files.bill[0].originalname, url: `/uploads/${files.bill[0].filename}`, type: 'bill' });
+    if (files.receipt) attachments.push({ name: files.receipt[0].originalname, url: `/uploads/${files.receipt[0].filename}`, type: 'receipt' });
+    if (files.proof) attachments.push({ name: files.proof[0].originalname, url: `/uploads/${files.proof[0].filename}`, type: 'proof' });
+  }
+
+  // Handle removals first
+  if (data.removedAttachments) {
+    let urlsToRemove = [];
+    try {
+      urlsToRemove = typeof data.removedAttachments === 'string' && data.removedAttachments.startsWith('[')
+        ? JSON.parse(data.removedAttachments)
+        : [data.removedAttachments];
+    } catch (e) {
+      urlsToRemove = [data.removedAttachments];
+    }
+    
+    await Expense.findByIdAndUpdate(id, {
+      $pull: { attachments: { url: { $in: urlsToRemove } } }
+    });
+  }
+
+  const updatePayload = attachments.length > 0 
+    ? { ...data, $push: { attachments: { $each: attachments } } }
+    : data;
+
+  const companyName = data.companyName || await resolveEntityName(data.vendorId, 'Vendor');
+
+  const expense = await Expense.findByIdAndUpdate(id, updatePayload, { new: true });
   
   // Sync Ledger ONLY if it was already approved
   if (expense.isApproved) {
@@ -106,10 +168,15 @@ export const updateExpense = async (id, data) => {
       { referenceId: id, referenceType: 'Expense' },
       {
         date: data.date,
-        description: `Expense [${expense.expenseId}]: ${data.category} - ${data.description || ''} (Mode: ${data.modeOfPayment})`,
-        companyName: data.companyName,
+        description: `${data.category}: ${data.description || 'General Expenditure Update'}`,
+        companyName: companyName,
         debit: data.totalAmount,
-        balance: data.totalAmount
+        credit: 0,
+        balance: data.totalAmount,
+        referenceNo: expense.expenseId,
+        modeOfPayment: data.modeOfPayment,
+        handledBy: data.paidBy || data.contactPerson,
+        accountId: data.accountId
       }
     );
   }
@@ -195,6 +262,7 @@ export const getAllPayments = async (user, { search, companyName, type, referenc
 
   const payments = await Payment.find(query)
     .populate("createdBy", "name")
+    .populate("recipientDetailId", "company")
     .sort({ date: -1 })
     .skip((page - 1) * limit)
     .limit(limit);
@@ -221,15 +289,36 @@ export const getLatestPaymentNo = async () => {
     return nextNo;
 };
 
-export const createPayment = async (data, user) => {
+export const createPayment = async (data, user, files) => {
   const paymentId = await getLatestPaymentNo();
-  const payment = await Payment.create({ ...data, paymentId, createdBy: user.id });
+  
+  const attachments = [];
+  if (files) {
+    if (files.bill) attachments.push({ name: files.bill[0].originalname, url: `/uploads/${files.bill[0].filename}`, type: 'bill' });
+    if (files.receipt) attachments.push({ name: files.receipt[0].originalname, url: `/uploads/${files.receipt[0].filename}`, type: 'receipt' });
+    if (files.proof) attachments.push({ name: files.proof[0].originalname, url: `/uploads/${files.proof[0].filename}`, type: 'proof' });
+  }
+
+  // Determine the model for recipientDetailId
+  const recipientDetailModel = data.type === 'Received' ? 'Customer' : 'Vendor';
+  const amount = Number(data.amount || 0);
+
+  const payment = await Payment.create({ 
+    ...data, 
+    paymentId, 
+    amount,
+    createdBy: user.id,
+    attachments,
+    recipientDetailModel,
+    recipientDetailId: data.recipientDetailId && data.recipientDetailId !== '' ? data.recipientDetailId : null,
+    referenceId: data.referenceId && data.referenceId !== '' ? data.referenceId : null
+  });
 
   // Update Expense balance if this payment is linked to one
   if (data.referenceType === 'Expense' && data.referenceId) {
     const expense = await Expense.findById(data.referenceId);
     if (expense) {
-      expense.paidTotal = (expense.paidTotal || 0) + Number(data.amount);
+      expense.paidTotal = (expense.paidTotal || 0) + amount;
       expense.balance = Math.max(0, expense.totalAmount - expense.paidTotal);
       
       if (expense.balance === 0) {
@@ -241,17 +330,38 @@ export const createPayment = async (data, user) => {
     }
   }
 
+  // Update Invoice balance if this payment is linked to one
+  if (data.referenceType === 'Invoice' && data.referenceId) {
+    const invoice = await Invoice.findById(data.referenceId);
+    if (invoice) {
+        invoice.paidAmount = (invoice.paidAmount || 0) + amount;
+        invoice.balanceAmount = Math.max(0, invoice.totalAmount - invoice.paidAmount);
+
+        if (invoice.balanceAmount === 0) {
+            invoice.status = 'Paid';
+        } else if (invoice.paidAmount > 0) {
+            invoice.status = 'Partially Paid';
+        }
+        await invoice.save();
+    }
+  }
+
+  const resCompanyName = data.companyName || await resolveEntityName(data.recipientDetailId, recipientDetailModel);
+
   // Create Ledger entry for tracking movement in the allocation account
   await Ledger.create({
     date: data.date,
-
-    description: `Payment ${data.type}: ${data.remarks || 'Standard Registry Entry'} (Mode: ${data.modeOfPayment || 'N/A'})`,
-    companyName: data.companyName,
-    debit: data.type === 'Paid' ? data.amount : 0,
-    credit: data.type === 'Received' ? data.amount : 0,
+    description: `Payment ${data.type}: ${data.remarks || 'Standard Registry Entry'}`,
+    companyName: resCompanyName,
+    debit: data.type === 'Paid' ? amount : 0,
+    credit: data.type === 'Received' ? amount : 0,
     referenceId: payment._id,
-    balance: data.amount,
+    referenceNo: paymentId,
+    balance: amount,
     referenceType: 'Payment',
+    modeOfPayment: data.modeOfPayment,
+    handledBy: data.paidBy || data.contactPerson,
+    accountId: data.accountId && data.accountId !== '' ? data.accountId : null, // Link to specific bank/cash account
     createdBy: user.id
   });
 
@@ -267,19 +377,52 @@ export const deletePayment = async (id) => {
   await Ledger.findOneAndDelete({ referenceId: id, referenceType: 'Payment' });
 };
 
-export const updatePayment = async (id, data) => {
-  const payment = await Payment.findByIdAndUpdate(id, data, { new: true });
+export const updatePayment = async (id, data, files) => {
+  const attachments = [];
+  if (files) {
+    if (files.bill) attachments.push({ name: files.bill[0].originalname, url: `/uploads/${files.bill[0].filename}`, type: 'bill' });
+    if (files.receipt) attachments.push({ name: files.receipt[0].originalname, url: `/uploads/${files.receipt[0].filename}`, type: 'receipt' });
+    if (files.proof) attachments.push({ name: files.proof[0].originalname, url: `/uploads/${files.proof[0].filename}`, type: 'proof' });
+  }
+
+  // Handle removals first
+  if (data.removedAttachments) {
+    let urlsToRemove = [];
+    try {
+      urlsToRemove = typeof data.removedAttachments === 'string' && data.removedAttachments.startsWith('[')
+        ? JSON.parse(data.removedAttachments)
+        : [data.removedAttachments];
+    } catch (e) {
+      urlsToRemove = [data.removedAttachments];
+    }
+    
+    await Payment.findByIdAndUpdate(id, {
+      $pull: { attachments: { url: { $in: urlsToRemove } } }
+    });
+  }
+
+  const updatePayload = attachments.length > 0 
+    ? { ...data, $push: { attachments: { $each: attachments } } }
+    : data;
+
+  const payment = await Payment.findByIdAndUpdate(id, updatePayload, { new: true });
+
+  const companyName = data.companyName || await resolveEntityName(data.recipientDetailId, payment.recipientDetailModel);
 
   // Sync Ledger
   await Ledger.findOneAndUpdate(
     { referenceId: id, referenceType: 'Payment' },
     {
       date: data.date,
-      description: `Payment ${data.type} [${payment.paymentId}]: ${data.remarks || 'Standard Registry Entry'} (Mode: ${data.modeOfPayment})`,
-      companyName: data.companyName,
+      description: `Payment ${data.type} Update: ${data.remarks || 'Standard Registry Entry'}`,
+      companyName: companyName,
       debit: data.type === 'Paid' ? data.amount : 0,
       credit: data.type === 'Received' ? data.amount : 0,
-      balance: data.amount
+      balance: data.amount,
+      referenceNo: payment.paymentId,
+      modeOfPayment: data.modeOfPayment,
+      handledBy: data.paidBy || data.contactPerson,
+      accountId: data.accountId
     }
   );
 

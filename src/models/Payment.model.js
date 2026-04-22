@@ -23,7 +23,7 @@ const paymentSchema = new mongoose.Schema(
     transactionId: { type: String, trim: true },
     voucherNo: { type: String, trim: true },
 
-    referenceId: { type: mongoose.Schema.Types.ObjectId }, // Link to Invoice or Expense
+    referenceId: { type: String, trim: true }, // Manual Ref, Invoice No or Expense ID
     referenceType: { 
       type: String, 
       default: 'General',
@@ -31,6 +31,29 @@ const paymentSchema = new mongoose.Schema(
     },
     remarks: { type: String, trim: true },
     companyName: { type: String, trim: true },
+    
+    // New Traceability Fields
+    accountId: { type: mongoose.Schema.Types.ObjectId, ref: "Account" },
+    handledById: { type: mongoose.Schema.Types.ObjectId, ref: "Worker" },
+    contactPerson: { type: String, trim: true },
+    paidBy: { type: String, trim: true },
+    recipientDetailId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      refPath: 'recipientDetailModel' 
+    },
+    recipientDetailModel: {
+      type: String,
+      required: true,
+      enum: ['Vendor', 'Customer'],
+      default: 'Vendor'
+    },
+    
+    attachments: [{ 
+      name: String,
+      url: String,
+      type: { type: String, enum: ['bill', 'receipt', 'proof'] }
+    }],
+
     status: { 
       type: String, 
       default: 'completed',

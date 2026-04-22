@@ -19,12 +19,12 @@ export const getNextExpenseId = asyncHandler(async (req, res) => {
 });
 
 export const addExpense = asyncHandler(async (req, res) => {
-  const expense = await financeService.createExpense(req.body, req.user);
+  const expense = await financeService.createExpense(req.body, req.user, req.files);
   return successResponse(res, "Expense created successfully", 201, expense);
 });
 
 export const editExpense = asyncHandler(async (req, res) => {
-  const expense = await financeService.updateExpense(req.params.id, req.body);
+  const expense = await financeService.updateExpense(req.params.id, req.body, req.files);
   return successResponse(res, "Expense updated successfully", 200, expense);
 });
 
@@ -81,12 +81,12 @@ export const getNextPaymentId = asyncHandler(async (req, res) => {
 });
 
 export const addPayment = asyncHandler(async (req, res) => {
-  const payment = await financeService.createPayment(req.body, req.user);
+  const payment = await financeService.createPayment(req.body, req.user, req.files);
   return successResponse(res, "Payment created successfully", 201, payment);
 });
 
 export const editPayment = asyncHandler(async (req, res) => {
-  const payment = await financeService.updatePayment(req.params.id, req.body);
+  const payment = await financeService.updatePayment(req.params.id, req.body, req.files);
   return successResponse(res, "Payment updated successfully", 200, payment);
 });
 

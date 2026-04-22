@@ -1,7 +1,6 @@
 import { body } from "express-validator";
 
 export const createCustomerValidator = [
-  body("name").notEmpty().withMessage("Customer name is required"),
   body("company").notEmpty().withMessage("Company name is required"),
   body("mobile")
     .optional()

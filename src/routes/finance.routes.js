@@ -8,12 +8,22 @@ const router = express.Router();
 router.use(authMiddleware);
 
 
+import upload from "../middleware/upload.js";
+
 // --- Expenses ---
 router.get("/expenses", financeController.getExpenses);
 router.get("/expenses/next-id", financeController.getNextExpenseId);
 router.get("/expenses/:id", financeController.getExpenseById);
-router.post("/expenses", financeController.addExpense);
-router.put("/expenses/:id", financeController.editExpense);
+router.post("/expenses", upload.fields([
+  { name: 'bill', maxCount: 1 },
+  { name: 'receipt', maxCount: 1 },
+  { name: 'proof', maxCount: 1 }
+]), financeController.addExpense);
+router.put("/expenses/:id", upload.fields([
+  { name: 'bill', maxCount: 1 },
+  { name: 'receipt', maxCount: 1 },
+  { name: 'proof', maxCount: 1 }
+]), financeController.editExpense);
 router.patch("/expenses/:id/approve", financeController.approveExpense);
 router.delete("/expenses/:id", financeController.deleteExpense);
 
@@ -28,8 +38,16 @@ router.delete("/invoices/:id", financeController.deleteInvoice);
 router.get("/payments", financeController.getPayments);
 router.get("/payments/next-id", financeController.getNextPaymentId);
 router.get("/payments/:id", financeController.getPaymentById);
-router.post("/payments", financeController.addPayment);
-router.put("/payments/:id", financeController.editPayment);
+router.post("/payments", upload.fields([
+  { name: 'bill', maxCount: 1 },
+  { name: 'receipt', maxCount: 1 },
+  { name: 'proof', maxCount: 1 }
+]), financeController.addPayment);
+router.put("/payments/:id", upload.fields([
+  { name: 'bill', maxCount: 1 },
+  { name: 'receipt', maxCount: 1 },
+  { name: 'proof', maxCount: 1 }
+]), financeController.editPayment);
 router.delete("/payments/:id", financeController.deletePayment);
 
 // --- Ledger ---

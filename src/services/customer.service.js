@@ -11,7 +11,6 @@ export const getAllCustomers = async ({
 
   if (search) {
     query.$or = [
-      { name: { $regex: search, $options: "i" } },
       { email: { $regex: search, $options: "i" } },
       { mobile: { $regex: search, $options: "i" } },
       { companyName: { $regex: search, $options: "i" } },
@@ -44,7 +43,7 @@ export const getAllCustomers = async ({
 };
 
 export const createCustomer = async (data) => {
-  const { name, email } = data;
+  const { email } = data;
 
   if (email) {
     const normalizedEmail = email.trim().toLowerCase();
@@ -55,7 +54,6 @@ export const createCustomer = async (data) => {
   }
   const customer = await Customer.create({
     ...data,
-    name: name.trim(),
     email: email ? email.trim().toLowerCase() : null,
   });
 
@@ -102,4 +100,14 @@ export const updateCustomer = async (id, data) => {
 export const deleteCustomer = async (id) => {
   const deleted = await Customer.findByIdAndDelete(id);
   return deleted;
+};
+
+export const getDropdown = async () => {
+  return Customer.find(
+    {},
+    {
+      mobile: 1,
+      company: 1,
+    }
+  );
 };

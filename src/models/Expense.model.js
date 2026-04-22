@@ -25,6 +25,13 @@ const expenseSchema = new mongoose.Schema(
     referenceNo: { type: String, trim: true },
     description: { type: String, trim: true },
     vendorId: { type: mongoose.Schema.Types.ObjectId, ref: "Vendor" },
+    
+    // New Traceability Fields
+    accountId: { type: mongoose.Schema.Types.ObjectId, ref: "Account" },
+    handledById: { type: mongoose.Schema.Types.ObjectId, ref: "Worker" },
+    contactPerson: { type: String, trim: true },
+    paidBy: { type: String, trim: true },
+
     status: { 
       type: String, 
       default: 'paid',

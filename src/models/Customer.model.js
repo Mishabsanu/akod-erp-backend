@@ -2,11 +2,6 @@ import mongoose from "mongoose";
 
 const CustomerSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: false,
-      trim: true,
-    },
     company: {
       type: String,
       required: true,
@@ -30,11 +25,6 @@ const CustomerSchema = new mongoose.Schema(
       default: "active",
     },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    address: { type: String, trim: true, required: true },
-    pincode: { type: String, trim: true, required: true },
-    city: { type: String, trim: true, required: true },
-    district: { type: String, trim: true, required: true },
-    state: { type: String, trim: true, required: true },
     contactPersonName: { type: String, trim: true, required: true },
     contactPersonEmail: {
       type: String,
