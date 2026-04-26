@@ -23,7 +23,15 @@ const OrderSchema = new mongoose.Schema(
     invoice_number: {
       type: String,
       trim: true,
-      required: false,
+      required: true,
+    },
+    sales_person: {
+      type: String,
+      trim: true,
+    },
+    project_location: {
+      type: String,
+      trim: true,
     },
     po_number: {
       type: String,

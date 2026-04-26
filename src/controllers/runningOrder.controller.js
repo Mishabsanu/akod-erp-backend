@@ -54,7 +54,7 @@ export const getDropdown = asyncHandler(async (req, res) => {
 });
 
 export const getFulfillment = asyncHandler(async (req, res) => {
-  const result = await runningOrderService.getFulfillmentStats(req.params.id);
+  const result = await runningOrderService.getFulfillmentStats(req.params.id, req.query);
   if (!result) {
     throw createError("Order not found", 404);
   }

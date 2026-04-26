@@ -17,6 +17,7 @@ export const getAllOrders = async ({
       { client_name: { $regex: search, $options: "i" } },
       { order_number: { $regex: search, $options: "i" } },
       { invoice_number: { $regex: search, $options: "i" } },
+      { sales_person: { $regex: search, $options: "i" } },
     ];
   }
 
@@ -69,18 +70,37 @@ export const deleteOrderById = async (id) => {
 };
 
 export const getOrdersDropdown = async () => {
-  return Order.find({}, { _id: 1, order_number: 1, invoice_number: 1, po_number: 1, client_name: 1, company_name: 1, items: 1, transaction_type: 1 }).sort({ createdAt: -1 });
+  return Order.find({}, { _id: 1, order_number: 1, invoice_number: 1, po_number: 1, client_name: 1, company_name: 1, items: 1, transaction_type: 1, project_location: 1 }).sort({ createdAt: -1 });
 };
 
-export const getFulfillmentStats = async (id) => {
+export const getFulfillmentStats = async (id, { startDate, endDate } = {}) => {
   const order = await Order.findById(id);
   if (!order) return null;
 
-  const [deliveries, returns] = await Promise.all([
-    DeliveryTicket.find({ runningOrderId: id }),
-    ReturnTicketModel.find({ runningOrderId: id })
-  ]);
+  const ticketQuery = { runningOrderId: id };
+  if (startDate || endDate) {
+    const dateQuery = {};
+    if (startDate) dateQuery.$gte = new Date(startDate);
+    if (endDate) dateQuery.$lte = new Date(endDate);
 
+    // Apply to deliveryDate and returnDate respectively
+    const [deliveries, returns] = await Promise.all([
+      DeliveryTicket.find({ ...ticketQuery, deliveryDate: dateQuery }),
+      ReturnTicketModel.find({ ...ticketQuery, returnDate: dateQuery })
+    ]);
+    return calculateFulfillment(order, deliveries, returns);
+  }
+
+  const [deliveries, returns] = await Promise.all([
+    DeliveryTicket.find(ticketQuery),
+    ReturnTicketModel.find(ticketQuery)
+  ]);
+  
+  return calculateFulfillment(order, deliveries, returns);
+};
+
+// Helper function to calculate stats
+const calculateFulfillment = (order, deliveries, returns) => {
   const stats = order.items.map(orderItem => {
     // Total delivered for this product
     const deliveredQty = deliveries.reduce((acc, dn) => {

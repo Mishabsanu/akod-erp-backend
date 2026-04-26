@@ -52,6 +52,7 @@ const DeliveryTicketSchema = new mongoose.Schema(
     poNo: { type: String },
     invoiceNo: { type: String },
     vehicleNo: { type: String },
+    driverName: { type: String },
 
     items: { type: [ItemSchema], required: true },
 

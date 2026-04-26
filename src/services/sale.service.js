@@ -304,7 +304,22 @@ export const getStats = async (
     },
   ]);
 
-  const result = {};
+  const todayStr = format(new Date(), "dd-MM-yyyy");
+  const todayAltStr = format(new Date(), "yyyy-MM-dd");
+  
+  const todayFollowUpCount = await Sale.countDocuments({
+    ...matchQuery,
+    nextFollowUpDate: { $in: [todayStr, todayAltStr] }
+  });
+
+  const result = {
+    "All Statuses": 0,
+    "New Lead": 0,
+    "Call Required": 0,
+    "Interested": 0,
+    "Today Follow-up": todayFollowUpCount
+  };
+
   let total = 0;
   stats.forEach((item) => {
     if (item._id) {
