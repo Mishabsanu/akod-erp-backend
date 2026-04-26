@@ -13,7 +13,7 @@ export const getAllVendors = async ({
     query.$or = [
       { email: { $regex: search, $options: "i" } },
       { mobile: { $regex: search, $options: "i" } },
-      { companyName: { $regex: search, $options: "i" } },
+      { company: { $regex: search, $options: "i" } },
     ];
   }
 

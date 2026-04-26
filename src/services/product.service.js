@@ -140,7 +140,6 @@ export const bulkCreate = async (productsData, userId) => {
         $setOnInsert: {
           createdBy: userId,
           createdAt: new Date(),
-          status: p.status || "active",
         },
       },
       upsert: true,

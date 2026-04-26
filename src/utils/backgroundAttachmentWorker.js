@@ -1,7 +1,7 @@
-import cloudinary from "../config/cloudinary.js";
 import {
   deleteFile,
   deleteFromCloudinary,
+  uploadToCloud,
 } from "../helper/cloudinaryHelper.js";
 
 export const uploadFilesInBackground = async ({
@@ -16,32 +16,32 @@ export const uploadFilesInBackground = async ({
     if (!files) return;
     if (!Array.isArray(files)) files = [files];
 
+    console.log(`Background upload started for ${folder}/${field} on doc ${docId}`);
+    
     const uploadPromises = files.map((file) =>
-      cloudinary.uploader
-        .upload(file.path, {
-          folder,
-          resource_type: "auto",
-          timeout: 60000,
-        })
+      uploadToCloud(file, folder)
         .then((uploaded) => {
-          deleteFile(file.path);
+          console.log(`Cloudinary upload success: ${uploaded.secure_url}`);
           return uploaded.secure_url;
         })
     );
 
     const uploadedUrls = await Promise.all(uploadPromises);
+    console.log(`All files uploaded. Updating database field: ${field}`);
 
     if (isSingle) {
-      await model.findByIdAndUpdate(docId, {
+      const updatedDoc = await model.findByIdAndUpdate(docId, {
         [field]: uploadedUrls[0],
-      });
+      }, { new: true });
+      console.log(`Database update success for ${docId}. URL: ${uploadedUrls[0]}`);
     } else {
       await model.findByIdAndUpdate(docId, {
         $push: { [field]: { $each: uploadedUrls } },
       });
+      console.log(`Database update success for ${docId} (multi-upload)`);
     }
   } catch (err) {
-    console.error("Background upload failed:", err.message);
+    console.error("Background upload failed:", err);
   }
 };
 

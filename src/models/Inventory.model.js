@@ -54,6 +54,7 @@ const inventorySchema = new mongoose.Schema(
           type: String,
           enum: [
             "ADD_STOCK",
+            "PRODUCTION",
             "INVENTORY_ADJUSTMENT",
             "DELIVERY",
             "RETURN",

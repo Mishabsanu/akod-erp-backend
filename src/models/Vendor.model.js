@@ -32,6 +32,7 @@ const VendorSchema = new mongoose.Schema(
       trim: true,
     },
     contactPersonMobile: { type: String, trim: true, required: true },
+    isInternal: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

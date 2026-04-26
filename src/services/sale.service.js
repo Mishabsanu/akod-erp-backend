@@ -426,7 +426,7 @@ export const updateStatus = async (
 
 export const getNextTicketNo = async () => {
   const lastSale = await Sale.findOne({
-    ticketNo: { $regex: /^TKT-\d{6}$/ },
+    ticketNo: { $regex: /^TKT-\d+$/ },
   })
     .sort({ ticketNo: -1 })
     .lean();
@@ -443,7 +443,7 @@ export const getNextTicketNo = async () => {
     }
   }
 
-  return `TKT-${String(nextNumber).padStart(3, "0")}`;
+  return `TKT-${String(nextNumber).padStart(4, "0")}`;
 };
 
 const processStream = async (

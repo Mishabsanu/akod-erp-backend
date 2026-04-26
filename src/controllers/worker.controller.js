@@ -60,15 +60,29 @@ export const updateWorker = asyncHandler(async (req, res) => {
     try {
       data.skills = JSON.parse(data.skills);
     } catch (e) {
-       // if it fails, keep it as is or handle accordingly
+      // keep it as is or handle accordingly
     }
   }
   if (typeof data.utilities === 'string') {
     try {
       data.utilities = JSON.parse(data.utilities);
     } catch (e) {
-       // if it fails, keep it as is or handle accordingly
+      // keep it as is or handle accordingly
     }
+  }
+
+  // Handle named document fields from multer.fields
+  if (req.files) {
+    const fileFields = [
+      'photo', 'cv', 'qidDoc', 'passportDoc', 
+      'insuranceDoc', 'healthCardDoc', 'certificateDoc'
+    ];
+    
+    fileFields.forEach(field => {
+      if (req.files[field] && req.files[field][0]) {
+        data[field] = req.files[field][0].path;
+      }
+    });
   }
 
   const updated = await workerService.updateWorker(req.params.id, data);

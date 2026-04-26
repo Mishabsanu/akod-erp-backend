@@ -17,7 +17,15 @@ router.post("/", authMiddleware, allowRoles("worker:create"), upload.fields([
   { name: 'healthCardDoc', maxCount: 1 },
   { name: 'certificateDoc', maxCount: 1 }
 ]), workerController.createWorker);
-router.put("/:id", authMiddleware, allowRoles("worker:update"), workerController.updateWorker);
+router.put("/:id", authMiddleware, allowRoles("worker:update"), upload.fields([
+  { name: 'photo', maxCount: 1 },
+  { name: 'cv', maxCount: 1 },
+  { name: 'qidDoc', maxCount: 1 },
+  { name: 'passportDoc', maxCount: 1 },
+  { name: 'insuranceDoc', maxCount: 1 },
+  { name: 'healthCardDoc', maxCount: 1 },
+  { name: 'certificateDoc', maxCount: 1 }
+]), workerController.updateWorker);
 router.delete("/:id", authMiddleware, allowRoles("worker:delete"), workerController.deleteWorker);
 
 export default router;

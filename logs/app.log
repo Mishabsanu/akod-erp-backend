@@ -27,3 +27,9 @@
 2026-04-12 20:57:19 error: 	Error caught: Cannot read properties of undefined (reading '0')
 2026-04-12 20:57:19 error: 	A non-operational error occurred
 2026-04-18 21:07:46 error: 	Error caught: DeliveryTicket validation failed: customerName: Cast to string failed for value "[ 'DELMON SCAF', 'DELMON SCAF' ]" (type Array) at path "customerName"
+2026-04-26 00:20:14 error: 	Error caught: Worker not found
+2026-04-26 00:22:00 error: 	Error caught: File too large
+2026-04-26 00:22:00 error: 	A non-operational error occurred
+2026-04-26 14:24:49 error: 	Error caught: Updating the path 'status' would create a conflict at 'status'
+2026-04-26 14:24:49 error: 	A non-operational error occurred
+2026-04-26 15:02:39 error: 	Error caught: Cast to embedded failed for value "[{"material":"69edd30d32adb734d150342a","quantity":100},{"material":"69edd30d32adb734d1503400","quantity":100}]" (type string) at path "rawMaterials" because of "ObjectParameterError"
