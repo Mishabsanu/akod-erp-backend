@@ -2,6 +2,7 @@ import {DeliveryTicket} from "../models/DeliveryTicket.model.js";
 import { Inventory } from "../models/Inventory.model.js";
 import ReturnTicketModel from "../models/ReturnTicket.model.js";
 import { createError } from "../utils/AppError.js";
+import { recalculateRunningOrderStatus } from "./deliveryTicket.service.js";
 
 export const addReturnTicket = async (ticketData) => {
   const { items, ticketNo, customerId } = ticketData;
@@ -38,6 +39,11 @@ export const addReturnTicket = async (ticketData) => {
     await inv.save();
   }
 
+  /* ---------------- UPDATE RUNNING ORDER STATUS ---------------- */
+  if (ticketData.runningOrderId) {
+    await recalculateRunningOrderStatus(ticketData.runningOrderId);
+  }
+
   return savedTicket;
 };
 
@@ -55,20 +61,21 @@ export const getReturnTickets = async (queryParams) => {
 
   if (search) {
     query.$or = [
-      { ticket_no: { $regex: search, $options: "i" } },
+      { ticketNo: { $regex: search, $options: "i" } },
       { poNo: { $regex: search, $options: "i" } },
+      { customerName: { $regex: search, $options: "i" } },
     ];
   }
 
   if (startDate && endDate) {
-    query.date = {
+    query.createdAt = {
       $gte: new Date(startDate),
       $lte: new Date(endDate),
     };
   }
 
   if (client_name) {
-    query.client_name = { $regex: client_name, $options: "i" };
+    query.customerName = { $regex: client_name, $options: "i" };
   }
 
   const pageNumber = parseInt(page);
@@ -308,6 +315,12 @@ export const deleteReturnTickets = async (id) => {
   }
 
   await ReturnTicketModel.findByIdAndDelete(id);
+
+  /* ---------------- UPDATE RUNNING ORDER STATUS ---------------- */
+  if (deletedTicket.runningOrderId) {
+    await recalculateRunningOrderStatus(deletedTicket.runningOrderId);
+  }
+
   return deletedTicket;
 };
 
@@ -408,6 +421,11 @@ export const updateReturnTicket = async (id, ticketData) => {
 
   existingTicket.set(updateData);
   await existingTicket.save();
+
+  /* ---------------- UPDATE RUNNING ORDER STATUS ---------------- */
+  if (existingTicket.runningOrderId) {
+    await recalculateRunningOrderStatus(existingTicket.runningOrderId);
+  }
 
   return existingTicket;
 };

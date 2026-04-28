@@ -1,4 +1,5 @@
 import { Role } from "../models/Role.model.js";
+import { User } from "../models/User.model.js";
 import { createError } from "../utils/AppError.js";
 
 export const getAllRoles = async ({
@@ -72,6 +73,10 @@ export const updateRole = async (id, data) => {
 };
 
 export const deleteRole = async (id) => {
+  const userCount = await User.countDocuments({ role: id });
+  if (userCount > 0) {
+    throw createError(`Cannot delete role. It is assigned to ${userCount} user(s).`, 400);
+  }
   const deleted = await Role.findByIdAndDelete(id);
   if (!deleted) throw createError("Role not found", 404);
   return deleted;

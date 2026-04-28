@@ -1,6 +1,77 @@
 import { DeliveryTicket } from "../models/DeliveryTicket.model.js";
 import { Inventory } from "../models/Inventory.model.js";
+import { Order } from "../models/RunningOrder.model.js";
+import ReturnTicketModel from "../models/ReturnTicket.model.js";
 import { createError } from "../utils/AppError.js";
+
+export const recalculateRunningOrderStatus = async (runningOrderId) => {
+  if (!runningOrderId) return;
+
+  const order = await Order.findById(runningOrderId);
+  if (!order) return;
+
+  const [deliveryTickets, returnTickets] = await Promise.all([
+    DeliveryTicket.find({ runningOrderId }),
+    ReturnTicketModel.find({ runningOrderId })
+  ]);
+  
+  // Aggregate net fulfilled quantities by productId
+  const fulfilledMap = {};
+  
+  deliveryTickets.forEach(ticket => {
+    ticket.items.forEach(item => {
+      const pid = item.productId.toString();
+      fulfilledMap[pid] = (fulfilledMap[pid] || 0) + (item.quantity || 0);
+    });
+  });
+
+  returnTickets.forEach(ticket => {
+    ticket.items.forEach(item => {
+      const pid = item.productId.toString();
+      // Returns reduce the fulfilled quantity
+      fulfilledMap[pid] = (fulfilledMap[pid] || 0) - (item.quantity || 0);
+    });
+  });
+
+  let allFullyDelivered = true;
+  let anyDeliveryMade = false;
+
+  if (order.items && order.items.length > 0) {
+    order.items.forEach(orderItem => {
+      const pid = orderItem.productId.toString();
+      const netFulfilled = fulfilledMap[pid] || 0;
+      
+      // Calculate individual item status
+      let itemStatus = "Pending";
+      if (netFulfilled >= orderItem.quantity) {
+        itemStatus = "Completed";
+      } else if (netFulfilled > 0) {
+        itemStatus = "Partially Completed";
+      }
+      
+      orderItem.status = itemStatus;
+
+      if (itemStatus !== "Completed") {
+        allFullyDelivered = false;
+      }
+      if (netFulfilled > 0) {
+        anyDeliveryMade = true;
+      }
+    });
+  } else {
+    allFullyDelivered = false;
+  }
+
+  let newStatus = "Pending";
+  if (allFullyDelivered) {
+    newStatus = "Completed";
+  } else if (anyDeliveryMade) {
+    newStatus = "Partially Completed";
+  }
+
+  order.status = newStatus;
+  await order.save();
+};
 export const addDeliveryTicket = async (ticketData) => {
   const { items, ticketNo, deliveredBy, customerId, receivedBy, ...rest } =
     ticketData;
@@ -69,6 +140,11 @@ export const addDeliveryTicket = async (ticketData) => {
       date: new Date(),
     });
     await inventoryItem.save();
+  }
+
+  /* ---------------- UPDATE RUNNING ORDER STATUS ---------------- */
+  if (rest.runningOrderId) {
+    await recalculateRunningOrderStatus(rest.runningOrderId);
   }
 
   return savedTicket;
@@ -249,6 +325,11 @@ export const updateDeliveryTicket = async (id, payload) => {
   existingTicket.set(updateData);
   await existingTicket.save();
 
+  /* ---------------- UPDATE RUNNING ORDER STATUS ---------------- */
+  if (existingTicket.runningOrderId) {
+    await recalculateRunningOrderStatus(existingTicket.runningOrderId);
+  }
+
   return existingTicket;
 };
 export const deleteDeliveryTickets = async (id) => {
@@ -274,5 +355,11 @@ export const deleteDeliveryTickets = async (id) => {
   }
 
   await DeliveryTicket.findByIdAndDelete(id);
+
+  /* ---------------- UPDATE RUNNING ORDER STATUS ---------------- */
+  if (deletedTicket.runningOrderId) {
+    await recalculateRunningOrderStatus(deletedTicket.runningOrderId);
+  }
+
   return deletedTicket;
 };

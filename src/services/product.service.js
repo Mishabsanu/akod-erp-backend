@@ -13,8 +13,7 @@ export const getAll = async ({ page = 1, limit = 10, search = "", status }) => {
   if (search) {
     query.$or = [
       { name: { $regex: search, $options: "i" } },
-      { model: { $regex: search, $options: "i" } },
-      { category: { $regex: search, $options: "i" } },
+      { itemCode: { $regex: search, $options: "i" } },
     ];
   }
 

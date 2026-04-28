@@ -126,7 +126,8 @@ const calculateFulfillment = (order, deliveries, returns) => {
       deliveredQty,
       returnedQty,
       netDelivered,
-      pendingQty: Math.max(0, pendingQty)
+      pendingQty: Math.max(0, pendingQty),
+      status: orderItem.status || 'Pending'
     };
   });
 

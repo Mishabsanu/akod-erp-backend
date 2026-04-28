@@ -182,10 +182,13 @@ export const updateInventory = async (id, data) => {
   }
 
   // 🔥 Handle quantity delta
-  if (typeof orderedQty === "number") {
-    const diff = orderedQty - inventory.orderedQty;
+  if (orderedQty !== undefined) {
+    const qtyNum = Number(orderedQty);
+    if (isNaN(qtyNum)) throw createError("Invalid quantity", 400);
 
-    inventory.orderedQty = orderedQty;
+    const diff = qtyNum - inventory.orderedQty;
+
+    inventory.orderedQty = qtyNum;
     inventory.availableQty += diff;
 
     if (inventory.availableQty < 0) {
@@ -197,6 +200,11 @@ export const updateInventory = async (id, data) => {
       stock: diff, // Use diff directly to show increase/decrease
       note,
     });
+  }
+
+  // 🔥 Update product reorder level if provided
+  if (data.reorderLevel !== undefined) {
+    await mongoose.model("Product").findByIdAndUpdate(inventory.product, { reorderLevel: Number(data.reorderLevel) });
   }
 
   // Safe updates

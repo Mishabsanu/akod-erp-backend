@@ -33,3 +33,4 @@
 2026-04-26 15:02:39 error: 	Error caught: Cast to embedded failed for value "[{"material":"69edd30d32adb734d150342a","quantity":100},{"material":"69edd30d32adb734d1503400","quantity":100}]" (type string) at path "rawMaterials" because of "ObjectParameterError"
 2026-04-26 19:14:13 error: 	Error caught: E11000 duplicate key error collection: akod-erp.orders index: invoice_number_1 dup key: { invoice_number: "SANU-10" }
 2026-04-26 19:42:06 error: 	Error caught: E11000 duplicate key error collection: akod-erp.orders index: order_number_1 dup key: { order_number: "RO-00006" }
+2026-04-27 10:35:23 error: 	Error caught: Item with code CL1 not found in inventory

@@ -51,7 +51,12 @@ const OrderSchema = new mongoose.Schema(
         itemCode: String,
         description: String,
         unit: String,
-        quantity: { type: Number, default: 1 }
+        quantity: { type: Number, default: 1 },
+        status: {
+          type: String,
+          enum: ["Pending", "Partially Completed", "Completed"],
+          default: "Pending"
+        }
       }
     ],
     balance_due: {
@@ -76,18 +81,11 @@ const OrderSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: [
-        "Order placed",
-        "Production going on",
-        "Ready to dispatch",
-        "Loaded",
-        "On the way to port",
-        "Arrive at port",
-        "Depart from port",
-        "In transit to destination",
-        "Arrived at destination",
+        "Pending",
+        "Partially Completed",
         "Completed",
       ],
-      default: "Order placed",
+      default: "Pending",
     },
     transaction_type: {
       type: String,

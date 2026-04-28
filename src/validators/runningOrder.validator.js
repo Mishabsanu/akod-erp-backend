@@ -1,17 +1,6 @@
 import { body } from "express-validator";
 
-const statusEnum = [
-  "Order placed",
-  "Production going on",
-  "Ready to dispatch",
-  "Loaded",
-  "On the way to port",
-  "Arrive at port",
-  "Depart from port",
-  "In transit to destination",
-  "Arrived at destination",
-  "Completed",
-];
+const statusEnum = ["Pending", "Partially Completed", "Completed"]
 
 const currencyEnum = ["INR", "USD", "EUR", "GBP", "JPY", "CNY"];
 const transactionTypeEnum = ["Sale", "Hire", "Contract"];
