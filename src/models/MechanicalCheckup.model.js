@@ -11,27 +11,43 @@ const mechanicalCheckupSchema = new mongoose.Schema(
     odometer: { type: Number, required: true },
     partsCondition: {
       engine: {
-        status: { type: String, enum: ["Good", "Repair Needed", "Critical"], default: "Good" },
+        status: { type: String, enum: ["Good", "Fair", "Repair Needed", "Critical"], default: "Good" },
         remarks: { type: String, trim: true }
       },
       oilLevel: {
         status: { type: String, enum: ["OK", "Low", "Needs Change"], default: "OK" },
         remarks: { type: String, trim: true }
       },
+      coolantLevel: {
+        status: { type: String, enum: ["OK", "Low", "Needs Change"], default: "OK" },
+        remarks: { type: String, trim: true }
+      },
+      battery: {
+        status: { type: String, enum: ["Good", "Fair", "Repair Needed", "Critical"], default: "Good" },
+        remarks: { type: String, trim: true }
+      },
       tires: {
-        status: { type: String, enum: ["Good", "Worn", "Replace"], default: "Good" },
+        status: { type: String, enum: ["Good", "Fair", "Repair Needed", "Critical"], default: "Good" },
+        remarks: { type: String, trim: true }
+      },
+      spareTyre: {
+        status: { type: String, enum: ["Good", "Fair", "Repair Needed", "Critical"], default: "Good" },
         remarks: { type: String, trim: true }
       },
       brakes: {
-        status: { type: String, enum: ["Good", "Weak", "Repair Needed"], default: "Good" },
+        status: { type: String, enum: ["Good", "Fair", "Repair Needed", "Critical"], default: "Good" },
         remarks: { type: String, trim: true }
       },
       lights: {
-        status: { type: String, enum: ["Working", "Bulb Fuse", "Repair Needed"], default: "Working" },
+        status: { type: String, enum: ["Working", "Defective", "Repair Needed"], default: "Working" },
         remarks: { type: String, trim: true }
       },
       suspension: {
-        status: { type: String, enum: ["Good", "Noisy", "Repair Needed"], default: "Good" },
+        status: { type: String, enum: ["Good", "Fair", "Repair Needed", "Critical"], default: "Good" },
+        remarks: { type: String, trim: true }
+      },
+      wipers: {
+        status: { type: String, enum: ["Working", "Defective", "Repair Needed"], default: "Working" },
         remarks: { type: String, trim: true }
       }
     },

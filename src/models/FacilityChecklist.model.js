@@ -12,6 +12,12 @@ const facilityChecklistSchema = new mongoose.Schema(
     isClean: { type: Boolean, default: true },
     isWaterAvailable: { type: Boolean, default: true },
     isElectricityOK: { type: Boolean, default: true },
+    isFireSafetyOK: { type: Boolean, default: true },
+    isACVentilationOK: { type: Boolean, default: true },
+    isEquipmentOK: { type: Boolean, default: true },
+    isInternetOK: { type: Boolean, default: true },
+    isPestControlOK: { type: Boolean, default: true },
+    isPPEComplianceOK: { type: Boolean, default: true },
     photos: [{ type: String }],
     remarks: { type: String, trim: true },
     inspectorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }

@@ -40,6 +40,7 @@ export const createRole = async (data) => {
     name: name.trim(),
     permissions,
     status,
+    description: data.description,
     createdBy: data.createdBy,
   });
   return role;
@@ -52,11 +53,12 @@ export const getRoleById = async (id) => {
 };
 
 export const updateRole = async (id, data) => {
-  const allowed = ["name", "permissions", "status"];
+  const allowed = ["name", "permissions", "status", "description"];
   const updates = Object.keys(data).reduce((acc, key) => {
     if (allowed.includes(key)) acc[key] = data[key];
     return acc;
   }, {});
+  
   if (updates.name) {
     const existing = await Role.findOne({
       name: updates.name,
@@ -67,7 +69,8 @@ export const updateRole = async (id, data) => {
 
   const role = await Role.findById(id);
   if (!role) throw createError("Role not found", 404);
-  Object.assign(role, updates);
+  
+  role.set(updates);
   await role.save();
   return role;
 };

@@ -19,37 +19,61 @@ const RoleSchema = new mongoose.Schema(
     },
 
     permissions: {
+      // Administration
       user: { type: PermissionSchema, default: () => ({}) },
       role: { type: PermissionSchema, default: () => ({}) },
+      
+      // CRM
+      sales: { type: PermissionSchema, default: () => ({}) },
+      running_order: { type: PermissionSchema, default: () => ({}) },
+      quote_track: { type: PermissionSchema, default: () => ({}) },
+      
+      // Inventory & Logistics
       customer: { type: PermissionSchema, default: () => ({}) },
       vendor: { type: PermissionSchema, default: () => ({}) },
       product: { type: PermissionSchema, default: () => ({}) },
       inventory: { type: PermissionSchema, default: () => ({}) },
       delivery_ticket: { type: PermissionSchema, default: () => ({}) },
       return_ticket: { type: PermissionSchema, default: () => ({}) },
-      attendance: { type: PermissionSchema, default: () => ({}) },
-      sales: { type: PermissionSchema, default: () => ({}) },
-      quote_track: { type: PermissionSchema, default: () => ({}) },
-      running_order: { type: PermissionSchema, default: () => ({}) },
-      invoice: { type: PermissionSchema, default: () => ({}) },
-      payment: { type: PermissionSchema, default: () => ({}) },
-      expense: { type: PermissionSchema, default: () => ({}) },
-      payroll: { type: PermissionSchema, default: () => ({}) },
-      ledger: { type: PermissionSchema, default: () => ({}) },
+      
+      // Finance & Accounts
       accounts: { type: PermissionSchema, default: () => ({}) },
-      fleet: { type: PermissionSchema, default: () => ({}) },
-      facility: { type: PermissionSchema, default: () => ({}) },
+      ledger: { type: PermissionSchema, default: () => ({}) },
+      expense: { type: PermissionSchema, default: () => ({}) },
+      payment: { type: PermissionSchema, default: () => ({}) },
+      payroll: { type: PermissionSchema, default: () => ({}) },
+      salary_breakup: { type: PermissionSchema, default: () => ({}) },
+      salary_slip: { type: PermissionSchema, default: () => ({}) },
+      invoice: { type: PermissionSchema, default: () => ({}) },
+
+      // HR & Workforce
       worker: { type: PermissionSchema, default: () => ({}) },
-      production: { type: PermissionSchema, default: () => ({}) },
-      raw_material: { type: PermissionSchema, default: () => ({}) },
+      attendance: { type: PermissionSchema, default: () => ({}) },
       leave: { type: PermissionSchema, default: () => ({}) },
       utility: { type: PermissionSchema, default: () => ({}) },
+
+      // Production & Factory
+      production: { type: PermissionSchema, default: () => ({}) },
+      raw_material: { type: PermissionSchema, default: () => ({}) },
+      raw_material_registry: { type: PermissionSchema, default: () => ({}) },
+      raw_material_stock: { type: PermissionSchema, default: () => ({}) },
+
+      // Operations & Fleet
+      fleet: { type: PermissionSchema, default: () => ({}) },
+      mechanical_checkup: { type: PermissionSchema, default: () => ({}) },
+      workshop_reports: { type: PermissionSchema, default: () => ({}) },
+      facility: { type: PermissionSchema, default: () => ({}) },
+      facility_audit: { type: PermissionSchema, default: () => ({}) },
     },
 
     status: {
       type: String,
       enum: ["active", "inactive"],
       default: "active",
+    },
+    description: {
+      type: String,
+      trim: true,
     },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },
