@@ -55,6 +55,7 @@ export const getReturnTickets = async (queryParams) => {
     startDate,
     endDate,
     client_name,
+    category,
   } = queryParams;
 
   const query = {};
@@ -64,7 +65,19 @@ export const getReturnTickets = async (queryParams) => {
       { ticketNo: { $regex: search, $options: "i" } },
       { poNo: { $regex: search, $options: "i" } },
       { customerName: { $regex: search, $options: "i" } },
+      { invoiceNo: { $regex: search, $options: "i" } },
+      { noteCategory: { $regex: search, $options: "i" } },
+      { subject: { $regex: search, $options: "i" } },
+      { projectLocation: { $regex: search, $options: "i" } },
+      { "deliveredBy.deliveredByName": { $regex: search, $options: "i" } },
+      { "receivedBy.receivedByName": { $regex: search, $options: "i" } },
+      { vehicleNo: { $regex: search, $options: "i" } },
+      { "items.name": { $regex: search, $options: "i" } },
     ];
+  }
+
+  if (category) {
+    query.noteCategory = category;
   }
 
   if (startDate && endDate) {

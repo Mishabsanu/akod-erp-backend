@@ -64,7 +64,7 @@ export const remove = async (id) => {
 
 export const getDropdown = async () => {
   return Product.find(
-    {},
+    { status: "active" }, // Filter for active only
     {
       name: 1,
       itemCode: 1,

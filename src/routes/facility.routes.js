@@ -16,6 +16,10 @@ router.delete("/:id", authMiddleware, allowRoles("facility:delete"), facilityCon
 
 // Checklist Routes
 router.get("/audit/logs", authMiddleware, allowRoles("facility:view"), facilityController.listChecklists);
+router.get("/audit/logs/:id", authMiddleware, allowRoles("facility:view"), facilityController.getChecklist);
+router.put("/audit/logs/:id", authMiddleware, allowRoles("facility:update"), upload.array("photos", 5), facilityController.updateChecklist);
+router.patch("/audit/logs/:id/verify", authMiddleware, allowRoles("facility:update"), facilityController.verifyChecklist);
+router.delete("/audit/logs/:id", authMiddleware, allowRoles("facility:delete"), facilityController.deleteChecklist);
 router.post("/audit/report", authMiddleware, allowRoles("facility:create"), upload.array("photos", 5), facilityController.createChecklist);
 
 export default router;

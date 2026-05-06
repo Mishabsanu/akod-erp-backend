@@ -22,6 +22,7 @@ import leaveRoutes from "./leave.routes.js";
 import workerUtilityRoutes from "./workerUtility.routes.js";
 import utilityItemRoutes from "./utilityItem.routes.js";
 import rawMaterialRoutes from "./rawMaterial.routes.js";
+import rentalRoutes from "./rental.routes.js";
 
 const router = express.Router();
 
@@ -48,5 +49,6 @@ router.use("/leaves", leaveRoutes);
 router.use("/worker-utilities", workerUtilityRoutes);
 router.use("/utility-items", utilityItemRoutes);
 router.use("/raw-materials", rawMaterialRoutes);
+router.use("/rentals", rentalRoutes);
 
 export default router;

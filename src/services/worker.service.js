@@ -54,3 +54,7 @@ export const updateWorker = async (id, data) => {
 export const removeWorker = async (id) => {
   return await Worker.findByIdAndDelete(id);
 };
+
+export const getWorkersDropdown = async () => {
+  return await Worker.find({}, { _id: 1, name: 1, workerId: 1 }).sort({ name: 1 });
+};

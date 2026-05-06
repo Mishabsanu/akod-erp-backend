@@ -25,6 +25,26 @@ const LeaveSchema = new mongoose.Schema(
       required: true,
       trim: true 
     },
+    totalDays: {
+      type: Number,
+      required: true
+    },
+    relieverId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Worker"
+    },
+    contactDuringLeave: {
+      type: String,
+      trim: true
+    },
+    airTicketRequired: {
+      type: Boolean,
+      default: false
+    },
+    exitPermitRequired: {
+      type: Boolean,
+      default: false
+    },
     attachment: { 
       type: String // File path for documents/medical center
     },

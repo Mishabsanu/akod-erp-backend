@@ -13,7 +13,7 @@ export const getAllCustomers = async ({
     query.$or = [
       { email: { $regex: search, $options: "i" } },
       { mobile: { $regex: search, $options: "i" } },
-      { companyName: { $regex: search, $options: "i" } },
+      { company: { $regex: search, $options: "i" } },
     ];
   }
 
@@ -54,7 +54,7 @@ export const createCustomer = async (data) => {
   }
   const customer = await Customer.create({
     ...data,
-    email: email ? email.trim().toLowerCase() : null,
+    email: email && email.trim() ? email.trim().toLowerCase() : undefined,
   });
 
   const c = customer.toObject();
@@ -78,16 +78,20 @@ export const updateCustomer = async (id, data) => {
     }
   }
 
-  if (data.email) {
-    const normalizedEmail = data.email.trim().toLowerCase();
-    const existingEmail = await Customer.findOne({
-      email: normalizedEmail,
-      _id: { $ne: id },
-    });
-    if (existingEmail) {
-      throw createError("Email already exists", 400);
+  if (data.email !== undefined) {
+    if (data.email && data.email.trim()) {
+      const normalizedEmail = data.email.trim().toLowerCase();
+      const existingEmail = await Customer.findOne({
+        email: normalizedEmail,
+        _id: { $ne: id },
+      });
+      if (existingEmail) {
+        throw createError("Email already exists", 400);
+      }
+      customer.email = normalizedEmail;
+    } else {
+      customer.email = undefined;
     }
-    customer.email = normalizedEmail;
   }
 
   await customer.save();
@@ -104,7 +108,7 @@ export const deleteCustomer = async (id) => {
 
 export const getDropdown = async () => {
   return Customer.find(
-    {},
+    { status: "active" }, // Filter for active only
     {
       mobile: 1,
       company: 1,

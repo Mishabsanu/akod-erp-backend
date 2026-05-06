@@ -19,5 +19,7 @@ router.get("/mechanical/logs", authMiddleware, allowRoles("fleet:view"), fleetCo
 router.get("/mechanical/logs/:id", authMiddleware, allowRoles("fleet:view"), fleetController.getCheckup);
 router.get("/mechanical/last/:vehicleId", authMiddleware, allowRoles("fleet:view"), fleetController.getLastCheckup);
 router.post("/mechanical/checkup", authMiddleware, allowRoles("fleet:create"), upload.array("photos", 5), fleetController.createCheckup);
+router.put("/mechanical/logs/:id", authMiddleware, allowRoles("fleet:update"), fleetController.updateCheckup);
+router.delete("/mechanical/logs/:id", authMiddleware, allowRoles("fleet:delete"), fleetController.deleteCheckup);
 
 export default router;

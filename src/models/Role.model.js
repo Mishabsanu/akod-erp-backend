@@ -26,7 +26,6 @@ const RoleSchema = new mongoose.Schema(
       // CRM
       sales: { type: PermissionSchema, default: () => ({}) },
       running_order: { type: PermissionSchema, default: () => ({}) },
-      quote_track: { type: PermissionSchema, default: () => ({}) },
       
       // Inventory & Logistics
       customer: { type: PermissionSchema, default: () => ({}) },
@@ -35,6 +34,7 @@ const RoleSchema = new mongoose.Schema(
       inventory: { type: PermissionSchema, default: () => ({}) },
       delivery_ticket: { type: PermissionSchema, default: () => ({}) },
       return_ticket: { type: PermissionSchema, default: () => ({}) },
+      rental_tracking: { type: PermissionSchema, default: () => ({}) },
       
       // Finance & Accounts
       accounts: { type: PermissionSchema, default: () => ({}) },

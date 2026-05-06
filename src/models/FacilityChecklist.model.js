@@ -20,7 +20,14 @@ const facilityChecklistSchema = new mongoose.Schema(
     isPPEComplianceOK: { type: Boolean, default: true },
     photos: [{ type: String }],
     remarks: { type: String, trim: true },
-    inspectorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+    inspectorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    verificationStatus: { 
+      type: String, 
+      enum: ["Pending", "Approved", "Rejected"], 
+      default: "Pending" 
+    },
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    verifiedAt: { type: Date }
   },
   { timestamps: true }
 );

@@ -11,6 +11,8 @@ const facilitySchema = new mongoose.Schema(
     location: { type: String, trim: true },
     capacity: { type: Number },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
+    lastAuditDate: { type: Date },
+    lastAuditStatus: { type: String, enum: ["Compliant", "Issues", "Pending"], default: "Pending" },
     managerId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },

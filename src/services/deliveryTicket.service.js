@@ -15,58 +15,89 @@ export const recalculateRunningOrderStatus = async (runningOrderId) => {
     ReturnTicketModel.find({ runningOrderId })
   ]);
   
-  // Aggregate net fulfilled quantities by productId
-  const fulfilledMap = {};
+  const deliveryMap = {};
+  const returnMap = {};
   
   deliveryTickets.forEach(ticket => {
     ticket.items.forEach(item => {
       const pid = item.productId.toString();
-      fulfilledMap[pid] = (fulfilledMap[pid] || 0) + (item.quantity || 0);
+      deliveryMap[pid] = (deliveryMap[pid] || 0) + (item.quantity || 0);
     });
   });
 
   returnTickets.forEach(ticket => {
     ticket.items.forEach(item => {
       const pid = item.productId.toString();
-      // Returns reduce the fulfilled quantity
-      fulfilledMap[pid] = (fulfilledMap[pid] || 0) - (item.quantity || 0);
+      const qty = Number(item.returnQty ?? item.quantity) || 0;
+      returnMap[pid] = (returnMap[pid] || 0) + qty;
     });
   });
 
   let allFullyDelivered = true;
   let anyDeliveryMade = false;
+  let allFullyReturned = true;
+  let anyReturnMade = false;
+
+  const isHire = order.transaction_type === 'Hire' || order.transaction_type === 'Contract';
 
   if (order.items && order.items.length > 0) {
     order.items.forEach(orderItem => {
       const pid = orderItem.productId.toString();
-      const netFulfilled = fulfilledMap[pid] || 0;
+      const deliveredQty = deliveryMap[pid] || 0;
+      const returnedQty = returnMap[pid] || 0;
       
-      // Calculate individual item status
-      let itemStatus = "Pending";
-      if (netFulfilled >= orderItem.quantity) {
-        itemStatus = "Completed";
-      } else if (netFulfilled > 0) {
-        itemStatus = "Partially Completed";
+      // Status for individual items
+      let itemStatus = "Order Placed";
+      if (isHire) {
+        if (deliveredQty >= orderItem.quantity && returnedQty >= deliveredQty) {
+          itemStatus = "Closed";
+        } else if (returnedQty > 0) {
+          itemStatus = "Partially Returned";
+        } else if (deliveredQty >= orderItem.quantity) {
+          itemStatus = "On Hire";
+        } else if (deliveredQty > 0) {
+          itemStatus = "Partially Completed";
+        }
+      } else {
+        // Sale
+        if (deliveredQty >= orderItem.quantity) {
+          itemStatus = "Completed";
+        } else if (deliveredQty > 0) {
+          itemStatus = "Partially Completed";
+        }
       }
       
       orderItem.status = itemStatus;
 
-      if (itemStatus !== "Completed") {
-        allFullyDelivered = false;
-      }
-      if (netFulfilled > 0) {
-        anyDeliveryMade = true;
-      }
+      // Track aggregate flags
+      if (deliveredQty < orderItem.quantity) allFullyDelivered = false;
+      if (deliveredQty > 0) anyDeliveryMade = true;
+      if (returnedQty < deliveredQty) allFullyReturned = false;
+      if (returnedQty > 0) anyReturnMade = true;
     });
   } else {
     allFullyDelivered = false;
+    allFullyReturned = false;
   }
 
-  let newStatus = "Pending";
-  if (allFullyDelivered) {
-    newStatus = "Completed";
-  } else if (anyDeliveryMade) {
-    newStatus = "Partially Completed";
+  let newStatus = "Order Placed";
+  if (isHire) {
+    if (allFullyDelivered && allFullyReturned && anyDeliveryMade) {
+      newStatus = "Closed";
+    } else if (anyReturnMade) {
+      newStatus = "Partially Returned";
+    } else if (allFullyDelivered && anyDeliveryMade) {
+      newStatus = "On Hire";
+    } else if (anyDeliveryMade) {
+      newStatus = "Partially Completed";
+    }
+  } else {
+    // Sale
+    if (allFullyDelivered && anyDeliveryMade) {
+      newStatus = "Completed";
+    } else if (anyDeliveryMade) {
+      newStatus = "Partially Completed";
+    }
   }
 
   order.status = newStatus;
@@ -159,6 +190,7 @@ export const getDeliveryTickets = async (queryParams) => {
     endDate,
     client_name,
     ticket_no,
+    category,
   } = queryParams;
 
   const query = {};
@@ -171,9 +203,17 @@ export const getDeliveryTickets = async (queryParams) => {
       { invoiceNo: { $regex: search, $options: "i" } },
       { noteCategory: { $regex: search, $options: "i" } },
       { "deliveredBy.deliveredByName": { $regex: search, $options: "i" } },
+      { "receivedBy.receivedByName": { $regex: search, $options: "i" } },
       { projectLocation: { $regex: search, $options: "i" } },
       { subject: { $regex: search, $options: "i" } },
+      { driverName: { $regex: search, $options: "i" } },
+      { vehicleNo: { $regex: search, $options: "i" } },
+      { "items.name": { $regex: search, $options: "i" } },
     ];
+  }
+
+  if (category) {
+    query.noteCategory = category;
   }
 
   if (startDate && endDate) {

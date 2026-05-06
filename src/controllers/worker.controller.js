@@ -93,3 +93,8 @@ export const deleteWorker = asyncHandler(async (req, res) => {
   await workerService.removeWorker(req.params.id);
   return successResponse(res, "Worker deleted successfully", 200, {});
 });
+
+export const dropdown = asyncHandler(async (req, res) => {
+  const list = await workerService.getWorkersDropdown();
+  return successResponse(res, "Workers dropdown fetched", 200, list);
+});

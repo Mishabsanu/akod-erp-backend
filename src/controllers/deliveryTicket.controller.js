@@ -130,7 +130,7 @@ export const update = asyncHandler(async (req, res) => {
 });
 
 export const GetDeliveryTickets = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, search = "", startDate, endDate } = req.query;
+  const { page = 1, limit = 10, search = "", startDate, endDate, category } = req.query;
 
   const result = await deliveryTicketService.getDeliveryTickets({
     page: Number(page),
@@ -138,6 +138,7 @@ export const GetDeliveryTickets = asyncHandler(async (req, res) => {
     search,
     startDate,
     endDate,
+    category,
   });
 
   return successResponse(

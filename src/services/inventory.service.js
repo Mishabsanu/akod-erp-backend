@@ -10,75 +10,152 @@ export const getAllInventories = async ({
   poNo,
   product,
   itemCode,
+  vendor, // Added vendor filter
   minStock,
   maxStock,
   onlyLowStock,
 }) => {
-  const query = {};
+  const match = {};
 
-  if (search) {
-    query.$or = [
-      { poNo: { $regex: search, $options: "i" } },
-      { itemCode: { $regex: search, $options: "i" } },
-    ];
-  }
-
-  if (status) query.status = status;
-  if (poNo) query.poNo = poNo;
-  if (product) query.product = product;
-  if (itemCode) query.itemCode = itemCode;
-
+  if (status) match.status = status;
+  if (poNo) match.poNo = poNo;
+  if (product) match.product = new mongoose.Types.ObjectId(product);
+  if (itemCode) match.itemCode = itemCode;
+  if (vendor) match.vendor = new mongoose.Types.ObjectId(vendor);
 
   if (minStock !== undefined || maxStock !== undefined) {
-    query.availableQty = {};
+    match.availableQty = {};
+    if (minStock !== undefined) match.availableQty.$gte = Number(minStock);
+    if (maxStock !== undefined) match.availableQty.$lte = Number(maxStock);
+  }
 
-    if (minStock !== undefined) {
-      query.availableQty.$gte = Number(minStock);
-    }
+  const pipeline = [
+    { $match: match },
+    // Convert ID to string for searching
+    { $addFields: { idStr: { $toString: "$_id" } } },
+    // Lookup Product
+    {
+      $lookup: {
+        from: "products",
+        localField: "product",
+        foreignField: "_id",
+        as: "productDoc",
+      },
+    },
+    { $unwind: { path: "$productDoc", preserveNullAndEmptyArrays: true } },
+    // Lookup Vendor
+    {
+      $lookup: {
+        from: "vendors",
+        localField: "vendor",
+        foreignField: "_id",
+        as: "vendorDoc",
+      },
+    },
+    { $unwind: { path: "$vendorDoc", preserveNullAndEmptyArrays: true } },
+    // Lookup CreatedBy
+    {
+      $lookup: {
+        from: "users",
+        localField: "createdBy",
+        foreignField: "_id",
+        as: "creatorDoc",
+      },
+    },
+    { $unwind: { path: "$creatorDoc", preserveNullAndEmptyArrays: true } },
+  ];
 
-    if (maxStock !== undefined) {
-      query.availableQty.$lte = Number(maxStock);
-    }
+  // Apply search
+  if (search) {
+    const searchRegex = { $regex: search, $options: "i" };
+    const idSearch = search.toLowerCase().startsWith("inv-") 
+      ? search.slice(4) 
+      : search;
+    const idSearchRegex = { $regex: idSearch, $options: "i" };
+      
+    pipeline.push({
+      $match: {
+        $or: [
+          { poNo: searchRegex },
+          { itemCode: searchRegex },
+          { "productDoc.name": searchRegex },
+          { "vendorDoc.company": searchRegex },
+          { idStr: idSearchRegex },
+        ],
+      },
+    });
   }
 
   const skip = (page - 1) * limit;
 
-  const [inventories, totalCount] = await Promise.all([
-    Inventory.find(query)
-      .populate("product", "name itemCode reorderLevel")
-      .populate("vendor", "name")
-      .populate("createdBy", "name")
-      .select("-__v")
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 }),
-    Inventory.countDocuments(query),
-  ]);
-
-  const totalPages = Math.ceil(totalCount / limit);
-
-  // Map to add 'isLowStock' flag dynamically and calculate totalSold
-  const contentWithFlags = inventories.map(inv => {
-    const item = inv.toObject();
-    const reorderLevel = inv.product?.reorderLevel || 0;
-    const isLow = inv.availableQty <= reorderLevel && inv.availableQty > 0;
-    return {
-      ...item,
-      totalSold: (inv.orderedQty || 0) - (inv.availableQty || 0),
-      isLowStock: isLow,
-      status: inv.availableQty === 0 ? "OUT_OF_STOCK" : (isLow ? "LOW_STOCK" : "IN_STOCK")
-    };
+  // Add projection and calculated fields
+  pipeline.push({
+    $addFields: {
+      totalSold: { $subtract: ["$orderedQty", "$availableQty"] },
+      isLowStock: {
+        $and: [
+          { $lte: ["$availableQty", { $ifNull: ["$productDoc.reorderLevel", 0] }] },
+          { $gt: ["$availableQty", 0] }
+        ]
+      },
+      status: {
+        $cond: {
+          if: { $eq: ["$availableQty", 0] },
+          then: "OUT_OF_STOCK",
+          else: {
+            $cond: {
+              if: { $lte: ["$availableQty", { $ifNull: ["$productDoc.reorderLevel", 0] }] },
+              then: "LOW_STOCK",
+              else: "IN_STOCK"
+            }
+          }
+        }
+      }
+    }
   });
 
+  // Final cleanup and formatting
+  pipeline.push({
+    $project: {
+      product: "$productDoc",
+      vendor: "$vendorDoc",
+      createdBy: "$creatorDoc",
+      poNo: 1,
+      itemCode: 1,
+      orderedQty: 1,
+      availableQty: 1,
+      status: 1,
+      totalSold: 1,
+      isLowStock: 1,
+      createdAt: 1,
+      updatedAt: 1,
+    }
+  });
+
+  // Execute with count
+  const results = await Inventory.aggregate([
+    ...pipeline,
+    { $sort: { createdAt: -1 } },
+    {
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [{ $skip: skip }, { $limit: Number(limit) }],
+      },
+    },
+  ]);
+
+  const totalCount = results[0].metadata[0]?.total || 0;
+  let finalData = results[0].data;
+
   // Filter if onlyLowStock is requested
-  const finalContent = onlyLowStock === "true" 
-    ? contentWithFlags.filter(item => item.isLowStock || item.status === "OUT_OF_STOCK")
-    : contentWithFlags;
+  if (onlyLowStock === "true") {
+    finalData = finalData.filter(item => item.isLowStock || item.status === "OUT_OF_STOCK");
+  }
 
   return {
-    content: finalContent,
-    totalCount: onlyLowStock === "true" ? finalContent.length : totalCount,
-    totalPages: onlyLowStock === "true" ? 1 : totalPages,
+    content: finalData,
+    totalCount: onlyLowStock === "true" ? finalData.length : totalCount,
+    totalPages: Math.ceil(totalCount / limit),
     currentPage: page,
     limit,
   };
@@ -316,14 +393,26 @@ export const deleteInventory = async (id) => {
 };
 
 export const getInventoryDropdown = async () => {
-  return Inventory.find(
-    {},
+  // Use aggregation to filter by populated product status
+  return Inventory.aggregate([
     {
-      poNo: 1,
-      itemCode: 1,
-      product: 1,
-    }
-  ).populate("product", "name sku");
+      $lookup: {
+        from: "products",
+        localField: "product",
+        foreignField: "_id",
+        as: "productDoc",
+      },
+    },
+    { $unwind: "$productDoc" },
+    { $match: { "productDoc.status": "active" } },
+    {
+      $project: {
+        poNo: 1,
+        itemCode: 1,
+        product: "$productDoc",
+      },
+    },
+  ]);
 };
 
 export const getAvailableProducts = async () => {

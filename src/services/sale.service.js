@@ -40,9 +40,15 @@ export const getAll = async (
 ) => {
   const matchQuery = {};
 
-  // Role filter
-  if (user.role !== "admin") {
-    matchQuery.user = new mongoose.Types.ObjectId(user.id);
+  // Role-based data isolation
+  const roleName = (typeof user.role === 'object' ? user.role?.name : user.role)?.toLowerCase() || "";
+  const isAdmin = roleName === "admin" || roleName === "super admin";
+
+  if (!isAdmin) {
+    matchQuery.$or = [
+      { user: new mongoose.Types.ObjectId(user.id) },
+      { createdBy: new mongoose.Types.ObjectId(user.id) }
+    ];
   }
 
   // Search filter
@@ -185,9 +191,15 @@ export const getStats = async (
 ) => {
   const matchQuery = {};
 
-  // Role filter
-  if (user.role !== "admin") {
-    matchQuery.user = new mongoose.Types.ObjectId(user.id);
+  // Role-based data isolation
+  const roleName = (typeof user.role === 'object' ? user.role?.name : user.role)?.toLowerCase() || "";
+  const isAdmin = roleName === "admin" || roleName === "super admin";
+
+  if (!isAdmin) {
+    matchQuery.$or = [
+      { user: new mongoose.Types.ObjectId(user.id) },
+      { createdBy: new mongoose.Types.ObjectId(user.id) }
+    ];
   }
 
   // Search filter
@@ -336,8 +348,14 @@ export const getStats = async (
 export const getAllLastEnquiries = async (user, { search = "" }) => {
   const query = {};
 
-  if (user.role !== "admin") {
-    query.user = user.id;
+  const roleName = (typeof user.role === 'object' ? user.role?.name : user.role)?.toLowerCase() || "";
+  const isAdmin = roleName === "admin" || roleName === "super admin";
+
+  if (!isAdmin) {
+    query.$or = [
+      { user: user.id },
+      { createdBy: user.id }
+    ];
   }
 
   if (search) {

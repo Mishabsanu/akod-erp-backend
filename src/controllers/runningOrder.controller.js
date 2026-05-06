@@ -4,12 +4,14 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { createError } from "../utils/AppError.js";
 
 export const list = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, search = "", status, currency } = req.query;
+  const { page = 1, limit = 10, search = "", status, transaction_type, currency } = req.query;
   const result = await runningOrderService.getAllOrders({
+    user: req.user,
     page,
     limit,
     search,
     status,
+    transaction_type,
     currency,
   });
   return successResponse(res, "Orders fetched successfully", 200, result);
@@ -62,6 +64,6 @@ export const getFulfillment = asyncHandler(async (req, res) => {
 });
 
 export const GetLatestOrderNo = asyncHandler(async (req, res) => {
-    const nextNo = await runningOrderService.getLatestRunningOrderNo();
-    return successResponse(res, "Next order number fetched successfully", 200, nextNo);
+  const nextNo = await runningOrderService.getLatestRunningOrderNo();
+  return successResponse(res, "Next order number fetched successfully", 200, nextNo);
 });

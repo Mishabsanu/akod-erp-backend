@@ -9,27 +9,75 @@ import { deleteFromCloudinary } from "../helper/cloudinaryHelper.js";
 import { uploadFilesInBackground } from "../utils/backgroundAttachmentWorker.js";
 
 export const list = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, search = "" } = req.query;
+  const { page = 1, limit = 10, search = "", status } = req.query;
   const skip = (Number(page) - 1) * Number(limit);
 
-  const query = {};
-  if (search) {
-    query.batchNumber = { $regex: search, $options: "i" };
-  }
-  if (req.query.status) {
-    query.status = req.query.status;
+  const pipeline = [];
+
+  // Match by status if provided
+  if (status) {
+    pipeline.push({ $match: { status } });
   }
 
-  const [productions, totalCount] = await Promise.all([
-    Production.find(query)
-      .populate("productId", "name itemCode unit")
-      .populate("rawMaterials.material", "name itemCode unit")
-      .populate("createdBy", "name")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit)),
-    Production.countDocuments(query),
+  // Convert ID to string for searching
+  pipeline.push({ $addFields: { idStr: { $toString: "$_id" } } });
+
+  // Lookup Product
+  pipeline.push({
+    $lookup: {
+      from: "products",
+      localField: "productId",
+      foreignField: "_id",
+      as: "product",
+    },
+  });
+  pipeline.push({ $unwind: { path: "$product", preserveNullAndEmptyArrays: true } });
+
+  // Apply search
+  if (search) {
+    const searchRegex = { $regex: search, $options: "i" };
+    pipeline.push({
+      $match: {
+        $or: [
+          { batchNumber: searchRegex },
+          { "product.name": searchRegex },
+          { "product.itemCode": searchRegex },
+          { idStr: searchRegex },
+        ],
+      },
+    });
+  }
+
+  // Fetch with count
+  const results = await Production.aggregate([
+    ...pipeline,
+    { $sort: { createdAt: -1 } },
+    {
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [
+          { $skip: skip },
+          { $limit: Number(limit) },
+          {
+            $lookup: {
+              from: "users",
+              localField: "createdBy",
+              foreignField: "_id",
+              as: "creator",
+            },
+          },
+          { $unwind: { path: "$creator", preserveNullAndEmptyArrays: true } },
+        ],
+      },
+    },
   ]);
+
+  const totalCount = results[0].metadata[0]?.total || 0;
+  const productions = results[0].data.map(p => ({
+    ...p,
+    productId: p.product, // Maintain compatibility
+    createdBy: p.creator
+  }));
 
   return successResponse(res, "Production reports fetched successfully", 200, {
     content: productions,

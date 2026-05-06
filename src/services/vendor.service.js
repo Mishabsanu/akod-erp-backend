@@ -55,7 +55,7 @@ export const createVendor = async (data) => {
 
   const vendor = await Vendor.create({
     ...data,
-    email: email ? email.trim().toLowerCase() : null,
+    email: email && email.trim() ? email.trim().toLowerCase() : undefined,
   });
 
   const v = vendor.toObject();
@@ -79,16 +79,20 @@ export const updateVendor = async (id, data) => {
     }
   }
 
-  if (data.email) {
-    const normalizedEmail = data.email.trim().toLowerCase();
-    const existingEmail = await Vendor.findOne({
-      email: normalizedEmail,
-      _id: { $ne: id },
-    });
-    if (existingEmail) {
-      throw createError("Email already exists", 400);
+  if (data.email !== undefined) {
+    if (data.email && data.email.trim()) {
+      const normalizedEmail = data.email.trim().toLowerCase();
+      const existingEmail = await Vendor.findOne({
+        email: normalizedEmail,
+        _id: { $ne: id },
+      });
+      if (existingEmail) {
+        throw createError("Email already exists", 400);
+      }
+      vendor.email = normalizedEmail;
+    } else {
+      vendor.email = undefined;
     }
-    vendor.email = normalizedEmail;
   }
 
   await vendor.save();
@@ -105,7 +109,7 @@ export const deleteVendor = async (id) => {
 
 export const getDropdown = async () => {
   return Vendor.find(
-    {},
+    { status: "active" }, // Filter for active only
     {
       mobile: 1,
       company: 1,

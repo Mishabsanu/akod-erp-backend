@@ -54,8 +54,15 @@ const OrderSchema = new mongoose.Schema(
         quantity: { type: Number, default: 1 },
         status: {
           type: String,
-          enum: ["Pending", "Partially Completed", "Completed"],
-          default: "Pending"
+          enum: [
+            "Order Placed",
+            "Partially Completed",
+            "Completed",
+            "On Hire",
+            "Partially Returned",
+            "Closed"
+          ],
+          default: "Order Placed"
         }
       }
     ],
@@ -81,11 +88,14 @@ const OrderSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: [
-        "Pending",
+        "Order Placed",
         "Partially Completed",
         "Completed",
+        "On Hire",
+        "Partially Returned",
+        "Closed"
       ],
-      default: "Pending",
+      default: "Order Placed",
     },
     transaction_type: {
       type: String,

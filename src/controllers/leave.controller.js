@@ -21,6 +21,7 @@ export const list = asyncHandler(async (req, res) => {
   const [leaves, totalCount] = await Promise.all([
     Leave.find(query)
       .populate("workerId", "name workerId qidNo designation")
+      .populate("relieverId", "name workerId")
       .populate("createdBy", "name")
       .populate("approvedBy", "name")
       .sort({ createdAt: -1 })
@@ -40,6 +41,7 @@ export const list = asyncHandler(async (req, res) => {
 export const getOne = asyncHandler(async (req, res) => {
   const leave = await Leave.findById(req.params.id)
     .populate("workerId", "name workerId qidNo designation")
+    .populate("relieverId", "name workerId")
     .populate("createdBy", "name")
     .populate("approvedBy", "name");
     

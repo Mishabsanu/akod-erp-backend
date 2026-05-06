@@ -62,3 +62,13 @@ export const getLastCheckup = asyncHandler(async (req, res) => {
   const checkup = await fleetService.getLastCheckup(req.params.vehicleId);
   return successResponse(res, "Last checkup retrieved", 200, checkup);
 });
+
+export const updateCheckup = asyncHandler(async (req, res) => {
+  const updated = await fleetService.updateCheckup(req.params.id, req.body);
+  return successResponse(res, "Checkup updated successfully", 200, updated);
+});
+
+export const deleteCheckup = asyncHandler(async (req, res) => {
+  await fleetService.removeCheckup(req.params.id);
+  return successResponse(res, "Checkup deleted successfully", 200, {});
+});

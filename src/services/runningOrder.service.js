@@ -3,13 +3,23 @@ import { DeliveryTicket } from "../models/DeliveryTicket.model.js";
 import ReturnTicketModel from "../models/ReturnTicket.model.js";
 
 export const getAllOrders = async ({
+  user,
   page = 1,
   limit = 10,
   search = "",
   status,
+  transaction_type,
   currency,
 }) => {
   const query = {};
+
+  // Role-based data isolation
+  const roleName = (typeof user?.role === 'object' ? user.role?.name : user?.role)?.toLowerCase() || "";
+  const isAdmin = roleName === "admin" || roleName === "super admin";
+
+  if (!isAdmin && user?.id) {
+    query.createdBy = user.id;
+  }
 
   if (search) {
     query.$or = [
@@ -22,7 +32,17 @@ export const getAllOrders = async ({
   }
 
   if (status) {
-    query.status = status;
+    if (status === 'Ongoing') {
+      query.status = { $nin: ['Completed', 'Closed'] };
+    } else if (status === 'Completed') {
+      query.status = { $in: ['Completed', 'Closed'] };
+    } else {
+      query.status = status;
+    }
+  }
+
+  if (transaction_type) {
+    query.transaction_type = transaction_type;
   }
 
   if (currency) {
@@ -55,6 +75,9 @@ export const getOrderById = async (id) => {
 };
 
 export const createOrder = async (orderData) => {
+  if (!orderData.order_number) {
+    orderData.order_number = await getLatestRunningOrderNo();
+  }
   return Order.create(orderData);
 };
 
@@ -127,7 +150,7 @@ const calculateFulfillment = (order, deliveries, returns) => {
       returnedQty,
       netDelivered,
       pendingQty: Math.max(0, pendingQty),
-      status: orderItem.status || 'Pending'
+      status: orderItem.status || 'Order Placed'
     };
   });
 

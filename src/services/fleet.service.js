@@ -107,3 +107,13 @@ export const getLastCheckup = async (vehicleId) => {
   return await MechanicalCheckup.findOne({ vehicleId })
     .sort({ date: -1, createdAt: -1 });
 };
+
+export const updateCheckup = async (id, data) => {
+  const updated = await MechanicalCheckup.findByIdAndUpdate(id, data, { new: true });
+  if (!updated) throw createError("Checkup not found", 404);
+  return updated;
+};
+
+export const removeCheckup = async (id) => {
+  return await MechanicalCheckup.findByIdAndDelete(id);
+};

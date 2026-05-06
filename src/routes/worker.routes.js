@@ -7,6 +7,7 @@ import upload from "../middleware/upload.js";
 const router = express.Router();
 
 router.get("/", authMiddleware, allowRoles("worker:view"), workerController.listWorkers);
+router.get("/dropdown", authMiddleware, workerController.dropdown);
 router.get("/:id", authMiddleware, allowRoles("worker:view"), workerController.getWorker);
 router.post("/", authMiddleware, allowRoles("worker:create"), upload.fields([
   { name: 'photo', maxCount: 1 },

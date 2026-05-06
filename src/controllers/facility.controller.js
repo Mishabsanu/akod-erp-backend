@@ -51,3 +51,28 @@ export const createChecklist = asyncHandler(async (req, res) => {
   const checklist = await facilityService.createChecklist(data);
   return successResponse(res, "Facility checklist recorded successfully", 201, checklist);
 });
+
+export const getChecklist = asyncHandler(async (req, res) => {
+  const checklist = await facilityService.getChecklistById(req.params.id);
+  return successResponse(res, "Audit report fetched successfully", 200, checklist);
+});
+
+export const updateChecklist = asyncHandler(async (req, res) => {
+  const data = { ...req.body };
+  if (req.files && req.files.length > 0) {
+    data.photos = req.files.map(f => f.path);
+  }
+  const updated = await facilityService.updateChecklist(req.params.id, data);
+  return successResponse(res, "Audit report updated successfully", 200, updated);
+});
+
+export const deleteChecklist = asyncHandler(async (req, res) => {
+  await facilityService.removeChecklist(req.params.id);
+  return successResponse(res, "Audit report deleted successfully", 200, {});
+});
+
+export const verifyChecklist = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  const updated = await facilityService.verifyChecklist(req.params.id, status, req.user.id);
+  return successResponse(res, `Audit report ${status.toLowerCase()}`, 200, updated);
+});
