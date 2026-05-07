@@ -3,11 +3,24 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 import cloudinary from "../config/cloudinary.js";
 import { createError } from "../utils/AppError.js";
+import fs from "fs";
 const deleteFile = (path) => {
   if (path) {
     fs.unlink(path, (err) => {
       if (err) console.error(`Failed to delete temporary file: ${path}`, err);
     });
+  }
+};
+const deleteFromCloudinary = async (url) => {
+  if (!url) return;
+  try {
+    const publicIdMatch = url.match(/(?:\/)([^/]+)(?=\.[^.]+($|\?))/);
+    if (publicIdMatch && publicIdMatch[1]) {
+      const publicId = publicIdMatch[1];
+      await cloudinary.uploader.destroy(publicId);
+    }
+  } catch (error) {
+    console.error("Failed to delete attachment from Cloudinary", error);
   }
 };
 export const AddReturnTicket = asyncHandler(async (req, res) => {
@@ -19,6 +32,7 @@ export const AddReturnTicket = asyncHandler(async (req, res) => {
       const file = req.files.signedTicket[0];
       const uploaded = await cloudinary.uploader.upload(file.path, {
         folder: "return_tickets",
+        resource_type: "auto",
       });
       attachments.signedTicket = uploaded.secure_url;
       deleteFile(file.path);
@@ -29,6 +43,7 @@ export const AddReturnTicket = asyncHandler(async (req, res) => {
       for (const file of req.files.supportingDocs) {
         const uploaded = await cloudinary.uploader.upload(file.path, {
           folder: "return_tickets",
+          resource_type: "auto",
         });
         attachments.supportingDocs.push(uploaded.secure_url);
         deleteFile(file.path);
@@ -156,6 +171,7 @@ export const update = asyncHandler(async (req, res) => {
       const file = req.files.signedTicket[0];
       const uploaded = await cloudinary.uploader.upload(file.path, {
         folder: "return_tickets",
+        resource_type: "auto",
       });
       attachments.signedTicket = uploaded.secure_url;
       deleteFile(file.path);
@@ -166,9 +182,27 @@ export const update = asyncHandler(async (req, res) => {
       for (const file of req.files.supportingDocs) {
         const uploaded = await cloudinary.uploader.upload(file.path, {
           folder: "return_tickets",
+          resource_type: "auto",
         });
         attachments.supportingDocs.push(uploaded.secure_url);
         deleteFile(file.path);
+      }
+    }
+    
+    // Handle Attachment Removal
+    if (req.body.removeUrl) {
+      const { removeUrl, removeType } = req.body;
+      if (removeType === 'signedTicket') {
+        if (attachments.signedTicket === removeUrl) {
+          await deleteFromCloudinary(removeUrl);
+          attachments.signedTicket = "";
+        }
+      } else if (removeType === 'supportingDocs') {
+        const index = attachments.supportingDocs.indexOf(removeUrl);
+        if (index > -1) {
+          await deleteFromCloudinary(removeUrl);
+          attachments.supportingDocs.splice(index, 1);
+        }
       }
     }
 
@@ -178,6 +212,10 @@ export const update = asyncHandler(async (req, res) => {
     if (typeof body.items === 'string') body.items = JSON.parse(body.items);
     if (typeof body.deliveredBy === 'string') body.deliveredBy = JSON.parse(body.deliveredBy);
     if (typeof body.receivedBy === 'string') body.receivedBy = JSON.parse(body.receivedBy);
+    
+    // Ensure removeUrl is cleaned from payload so it doesn't get saved to other fields
+    delete body.removeUrl;
+    delete body.removeType;
 
     const payload = { ...body, attachments };
     const updatedReturnTicket = await returnTicketService.updateReturnTicket(id, payload);

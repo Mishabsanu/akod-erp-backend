@@ -36,3 +36,9 @@
 2026-04-26 19:14:13 error: 	Error caught: E11000 duplicate key error collection: akod-erp.orders index: invoice_number_1 dup key: { invoice_number: "SANU-10" }
 2026-04-26 19:42:06 error: 	Error caught: E11000 duplicate key error collection: akod-erp.orders index: order_number_1 dup key: { order_number: "RO-00006" }
 2026-04-27 10:35:23 error: 	Error caught: Item with code CL1 not found in inventory
+2026-05-07 17:12:31 error: 	Error caught: fs is not defined
+2026-05-07 17:12:31 error: 	A non-operational error occurred
+2026-05-07 17:15:34 error: 	Error caught: fs is not defined
+2026-05-07 17:15:34 error: 	A non-operational error occurred
+2026-05-07 17:16:21 error: 	Error caught: fs is not defined
+2026-05-07 17:16:21 error: 	A non-operational error occurred
