@@ -16,7 +16,17 @@ router.post("/", authMiddleware, allowRoles("worker:create"), upload.fields([
   { name: 'passportDoc', maxCount: 1 },
   { name: 'insuranceDoc', maxCount: 1 },
   { name: 'healthCardDoc', maxCount: 1 },
-  { name: 'certificateDoc', maxCount: 1 }
+  { name: 'certificateDoc', maxCount: 1 },
+  { name: 'skill_cert_0', maxCount: 1 },
+  { name: 'skill_cert_1', maxCount: 1 },
+  { name: 'skill_cert_2', maxCount: 1 },
+  { name: 'skill_cert_3', maxCount: 1 },
+  { name: 'skill_cert_4', maxCount: 1 },
+  { name: 'skill_cert_5', maxCount: 1 },
+  { name: 'skill_cert_6', maxCount: 1 },
+  { name: 'skill_cert_7', maxCount: 1 },
+  { name: 'skill_cert_8', maxCount: 1 },
+  { name: 'skill_cert_9', maxCount: 1 }
 ]), workerController.createWorker);
 router.put("/:id", authMiddleware, allowRoles("worker:update"), upload.fields([
   { name: 'photo', maxCount: 1 },
@@ -25,7 +35,17 @@ router.put("/:id", authMiddleware, allowRoles("worker:update"), upload.fields([
   { name: 'passportDoc', maxCount: 1 },
   { name: 'insuranceDoc', maxCount: 1 },
   { name: 'healthCardDoc', maxCount: 1 },
-  { name: 'certificateDoc', maxCount: 1 }
+  { name: 'certificateDoc', maxCount: 1 },
+  { name: 'skill_cert_0', maxCount: 1 },
+  { name: 'skill_cert_1', maxCount: 1 },
+  { name: 'skill_cert_2', maxCount: 1 },
+  { name: 'skill_cert_3', maxCount: 1 },
+  { name: 'skill_cert_4', maxCount: 1 },
+  { name: 'skill_cert_5', maxCount: 1 },
+  { name: 'skill_cert_6', maxCount: 1 },
+  { name: 'skill_cert_7', maxCount: 1 },
+  { name: 'skill_cert_8', maxCount: 1 },
+  { name: 'skill_cert_9', maxCount: 1 }
 ]), workerController.updateWorker);
 router.delete("/:id", authMiddleware, allowRoles("worker:delete"), workerController.deleteWorker);
 

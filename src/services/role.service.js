@@ -40,6 +40,7 @@ export const createRole = async (data) => {
     name: name.trim(),
     permissions,
     status,
+    isSuperAdmin: data.isSuperAdmin,
     description: data.description,
     createdBy: data.createdBy,
   });
@@ -53,7 +54,7 @@ export const getRoleById = async (id) => {
 };
 
 export const updateRole = async (id, data) => {
-  const allowed = ["name", "permissions", "status", "description"];
+  const allowed = ["name", "permissions", "status", "description", "isSuperAdmin"];
   const updates = Object.keys(data).reduce((acc, key) => {
     if (allowed.includes(key)) acc[key] = data[key];
     return acc;

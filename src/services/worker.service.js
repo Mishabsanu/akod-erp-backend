@@ -1,5 +1,6 @@
 import { Worker } from "../models/Worker.model.js";
 import { createError } from "../utils/AppError.js";
+import { Counter } from "../models/Counter.model.js";
 
 export const getAllWorkers = async ({ page = 1, limit = 10, search = "", status, facilityId }) => {
   const query = {};
@@ -42,6 +43,16 @@ export const getWorkerById = async (id) => {
 };
 
 export const createWorker = async (data) => {
+  // Auto-increment workerId: PROW-0001, PROW-0002, etc.
+  const counter = await Counter.findOneAndUpdate(
+    { model: "worker" },
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true }
+  );
+
+  const workerId = `PROW-${counter.seq.toString().padStart(4, "0")}`;
+  data.workerId = workerId;
+
   return await Worker.create(data);
 };
 

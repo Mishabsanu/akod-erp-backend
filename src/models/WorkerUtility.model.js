@@ -12,6 +12,10 @@ const workerUtilitySchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    size: {
+      type: String,
+      trim: true,
+    },
     quantity: {
       type: Number,
       default: 1,

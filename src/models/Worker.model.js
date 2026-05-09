@@ -12,6 +12,7 @@ const workerSchema = new mongoose.Schema(
     qidExpiryDate: { type: String }, 
     passportExpiryDate: { type: String },
     joinDate: { type: String },
+    dateOfBirth: { type: String },
     facilityId: { type: mongoose.Schema.Types.ObjectId, ref: "Facility" }, // Current Camp/Room
     photo: { type: String },
     cv: { type: String },

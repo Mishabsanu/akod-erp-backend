@@ -13,9 +13,10 @@ export const allowRoles = (permission) => async (req, res, next) => {
     }
 
     if (
-      userRole.permissions &&
-      userRole.permissions[module] &&
-      userRole.permissions[module][action]
+      userRole.isSuperAdmin ||
+      (userRole.permissions &&
+        userRole.permissions[module] &&
+        userRole.permissions[module][action])
     ) {
       return next();
     }

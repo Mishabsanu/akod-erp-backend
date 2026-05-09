@@ -2,6 +2,7 @@ import * as workerService from "../services/worker.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { successResponse } from "../utils/response.js";
 import { createError } from "../utils/AppError.js";
+import { processWorkerUploadsInBackground } from "../utils/workerBackgroundUploader.js";
 
 export const listWorkers = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, search = "", status, facilityId } = req.query;
@@ -34,22 +35,14 @@ export const createWorker = asyncHandler(async (req, res) => {
   }
   
   
-  // Handle named document fields from multer.fields
-  if (req.files) {
-    const fileFields = [
-      'photo', 'cv', 'qidDoc', 'passportDoc', 
-      'insuranceDoc', 'healthCardDoc', 'certificateDoc'
-    ];
-    
-    fileFields.forEach(field => {
-      if (req.files[field] && req.files[field][0]) {
-        data[field] = req.files[field][0].path;
-      }
-    });
+  const worker = await workerService.createWorker(data);
+
+  // Trigger background upload if files exist
+  if (req.files && Object.keys(req.files).length > 0) {
+    processWorkerUploadsInBackground(worker._id, req.files);
   }
 
-  const worker = await workerService.createWorker(data);
-  return successResponse(res, "Worker created successfully", 201, worker);
+  return successResponse(res, "Worker created. Profile is being processed.", 201, worker);
 });
 
 export const updateWorker = asyncHandler(async (req, res) => {
@@ -71,22 +64,14 @@ export const updateWorker = asyncHandler(async (req, res) => {
     }
   }
 
-  // Handle named document fields from multer.fields
-  if (req.files) {
-    const fileFields = [
-      'photo', 'cv', 'qidDoc', 'passportDoc', 
-      'insuranceDoc', 'healthCardDoc', 'certificateDoc'
-    ];
-    
-    fileFields.forEach(field => {
-      if (req.files[field] && req.files[field][0]) {
-        data[field] = req.files[field][0].path;
-      }
-    });
+  const updated = await workerService.updateWorker(req.params.id, data);
+
+  // Trigger background upload if new files exist
+  if (req.files && Object.keys(req.files).length > 0) {
+    processWorkerUploadsInBackground(req.params.id, req.files);
   }
 
-  const updated = await workerService.updateWorker(req.params.id, data);
-  return successResponse(res, "Worker updated successfully", 200, updated);
+  return successResponse(res, "Worker updated. Documents are being processed.", 200, updated);
 });
 
 export const deleteWorker = asyncHandler(async (req, res) => {

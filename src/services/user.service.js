@@ -27,7 +27,7 @@ export const getAllUsers = async ({
 
   const [users, totalCount] = await Promise.all([
     User.find(query)
-      .populate("role", "name")
+      .populate("role", "name isSuperAdmin")
       .populate("createdBy", "name")
       .select("-password -refreshTokens -__v")
       .skip(skip)

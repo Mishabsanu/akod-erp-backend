@@ -75,6 +75,10 @@ const RoleSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    isSuperAdmin: {
+      type: Boolean,
+      default: false,
+    },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   },
   { timestamps: true }
