@@ -12,6 +12,10 @@ const workerUtilitySchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    utilityItemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UtilityItem",
+    },
     size: {
       type: String,
       trim: true,

@@ -4,13 +4,32 @@ import { createError } from "../utils/AppError.js";
 import mongoose from "mongoose";
 
 export const issueUtility = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const utility = await WorkerUtility.create({
+    const { utilityItemId, quantity = 1, worker } = req.body;
+
+    if (utilityItemId) {
+      const masterItem = await UtilityItem.findById(utilityItemId).session(session);
+      if (!masterItem) throw createError("Utility master item not found", 404);
+      if (masterItem.quantity < quantity) {
+        throw createError(`Insufficient stock. Available: ${masterItem.quantity}`, 400);
+      }
+      masterItem.quantity -= quantity;
+      await masterItem.save({ session });
+    }
+
+    const utility = await WorkerUtility.create([{
       ...req.body,
       createdBy: req.user?._id,
-    });
-    res.status(201).json({ success: true, data: utility });
+    }], { session });
+
+    await session.commitTransaction();
+    session.endSession();
+    res.status(201).json({ success: true, data: utility[0] });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };
@@ -27,9 +46,17 @@ export const issueBulkUtilities = async (req, res, next) => {
 
     // 1. Process Stock Reductions and Validations
     for (const item of items) {
-      if (item.utilityItemId) {
+      let targetId = item.utilityItemId;
+      
+      // Fallback: If utilityItemId is missing, try to find by name and size
+      if (!targetId && item.itemName) {
+        const found = await UtilityItem.findOne({ name: item.itemName, size: item.size || "N/A" }).session(session);
+        if (found) targetId = found._id;
+      }
+
+      if (targetId) {
         // If it's a linked master item, check and reduce stock
-        const masterItem = await UtilityItem.findById(item.utilityItemId).session(session);
+        const masterItem = await UtilityItem.findById(targetId).session(session);
         if (!masterItem) {
           throw createError(`Utility Item ${item.itemName} not found in master stock.`, 404);
         }
@@ -40,6 +67,9 @@ export const issueBulkUtilities = async (req, res, next) => {
         // Atomically decrement stock
         masterItem.quantity -= item.quantity;
         await masterItem.save({ session });
+        
+        // Ensure the ID is saved in the record
+        item.utilityItemId = targetId;
       }
     }
 
@@ -96,26 +126,71 @@ export const getWorkerUtilities = async (req, res, next) => {
 };
 
 export const deleteUtility = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const utility = await WorkerUtility.findByIdAndDelete(req.params.id);
+    const utility = await WorkerUtility.findById(req.params.id).session(session);
     if (!utility) throw createError("Utility record not found", 404);
-    res.status(200).json({ success: true, message: "Utility record deleted" });
+
+    // If it was "issued", return quantity to stock
+    if (utility.status === "issued" && utility.utilityItemId) {
+      await UtilityItem.findByIdAndUpdate(
+        utility.utilityItemId,
+        { $inc: { quantity: utility.quantity } },
+        { session }
+      );
+    }
+
+    await WorkerUtility.findByIdAndDelete(req.params.id).session(session);
+    await session.commitTransaction();
+    session.endSession();
+    res.status(200).json({ success: true, message: "Utility record deleted and stock returned" });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };
 
 export const updateUtilityStatus = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { status, remarks } = req.body;
+    const oldRecord = await WorkerUtility.findById(req.params.id).session(session);
+    if (!oldRecord) throw createError("Utility record not found", 404);
+
+    // If changing from "issued" to "returned", increase stock
+    if (oldRecord.status === "issued" && status === "returned" && oldRecord.utilityItemId) {
+      await UtilityItem.findByIdAndUpdate(
+        oldRecord.utilityItemId,
+        { $inc: { quantity: oldRecord.quantity } },
+        { session }
+      );
+    } 
+    // If changing from "returned" back to "issued", decrease stock
+    else if (oldRecord.status !== "issued" && status === "issued" && oldRecord.utilityItemId) {
+      const master = await UtilityItem.findById(oldRecord.utilityItemId).session(session);
+      if (master && master.quantity >= oldRecord.quantity) {
+        master.quantity -= oldRecord.quantity;
+        await master.save({ session });
+      } else {
+        throw createError("Insufficient stock to re-issue this item", 400);
+      }
+    }
+
     const utility = await WorkerUtility.findByIdAndUpdate(
       req.params.id,
       { status, remarks },
-      { new: true }
+      { new: true, session }
     );
-    if (!utility) throw createError("Utility record not found", 404);
+
+    await session.commitTransaction();
+    session.endSession();
     res.status(200).json({ success: true, data: utility });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };
