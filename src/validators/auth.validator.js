@@ -10,7 +10,18 @@ export const registerValidation = [
 ];
 
 export const loginValidation = [
-  body("email").isEmail().withMessage("Valid email is required"),
+  body("email")
+    .notEmpty()
+    .withMessage("Email or Mobile is required")
+    .custom((value) => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const sanitizedPhone = value.replace(/[\s\-()]/g, "");
+      const phoneRegex = /^\+?[0-9]{8,15}$/;
+      if (!emailRegex.test(value) && !phoneRegex.test(sanitizedPhone)) {
+        throw new Error("Enter a valid email or mobile number");
+      }
+      return true;
+    }),
   body("password").notEmpty().withMessage("Password is required"),
 ];
 

@@ -59,9 +59,25 @@ export const login = asyncHandler(async (req, res, next) => {
   if (!email || !password) {
     throw createError("Email and password are required", 400);
   }
-  const user = await User.findOne({ email }).populate("role");
+  const identifier = email ? email.trim() : "";
+  const queryConditions = [];
+
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+  if (isEmail) {
+    queryConditions.push({ email: identifier.toLowerCase() });
+  } else {
+    const digits = identifier.replace(/\D/g, "");
+    if (digits.length > 0) {
+      const suffix = digits.slice(-8);
+      const regexString = suffix.split("").join("[\\s\\-()]*") + "$";
+      queryConditions.push({ mobile: { $regex: regexString } });
+    }
+    queryConditions.push({ email: identifier.toLowerCase() });
+  }
+
+  const user = await User.findOne({ $or: queryConditions }).populate("role");
   if (!user) {
-    throw createError("Email does not exist", 404);
+    throw createError("Email or Mobile does not exist", 404);
   }
   const match = await bcrypt.compare(password, user.password);
   if (!match) {

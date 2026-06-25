@@ -45,7 +45,23 @@ export const register = async ({ name, email, password, role }) => {
 };
 
 export const login = async ({ email, password }) => {
-  const user = await User.findOne({ email });
+  const identifier = email ? email.trim() : "";
+  const queryConditions = [];
+
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+  if (isEmail) {
+    queryConditions.push({ email: identifier.toLowerCase() });
+  } else {
+    const digits = identifier.replace(/\D/g, "");
+    if (digits.length > 0) {
+      const suffix = digits.slice(-8);
+      const regexString = suffix.split("").join("[\\s\\-()]*") + "$";
+      queryConditions.push({ mobile: { $regex: regexString } });
+    }
+    queryConditions.push({ email: identifier.toLowerCase() });
+  }
+
+  const user = await User.findOne({ $or: queryConditions });
   if (!user) throw createError("Invalid credentials", 401);
 
   const isMatch = await user.comparePassword(password);
