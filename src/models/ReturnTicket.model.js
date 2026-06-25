@@ -21,7 +21,7 @@ const ReceivedBySchema = new mongoose.Schema(
   {
     receivedByName: { type: String, required: true },
     receivedByMobile: { type: String, required: true },
-    qatarId: { type: String, required: true },
+    qatarId: { type: String },
     receivedDate: { type: Date, required: true },
   },
   { _id: false }
